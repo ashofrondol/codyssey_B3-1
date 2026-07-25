@@ -12,7 +12,12 @@
     mini-redis> exit
 """
 
+import re
+
 from mini_redis import MiniRedis
+
+
+_UNBALANCED_QUOTES = 'Protocol error: unbalanced quotes in request'
 
 
 # ---------- 토크나이저 ----------
@@ -21,6 +26,8 @@ def tokenize(line):
     """공백으로 토큰을 나누되, 큰따옴표("...")로 감싼 부분은 한 토큰으로 묶는다.
 
     간단한 이스케이프(\\", \\\\, \\n, \\t)를 지원한다.
+    따옴표가 짝이 맞지 않으면(닫히지 않았거나 토큰 중간에 나타나면)
+    ValueError를 던진다. 호출자가 표준 에러 문자열로 변환한다.
     """
     tokens = []
     i = 0
@@ -52,13 +59,23 @@ def tokenize(line):
                     buf.append(line[i])
                     i += 1
             if i >= n:
-                raise ValueError("unterminated string")
+                raise ValueError(_UNBALANCED_QUOTES)
             i += 1  # 닫는 " 건너뛰기
+            # 닫는 따옴표 뒤에는 공백이나 줄 끝만 올 수 있다. 이 검사가 없으면
+            # SET k "ab"cd 가 토큰 4개로 쪼개져 진짜 원인과 무관한
+            # '인자 개수 오류'가 보고된다(아래 else 분기와의 비대칭).
+            if i < n and not line[i].isspace():
+                raise ValueError(_UNBALANCED_QUOTES)
             tokens.append(''.join(buf))
         else:
-            # 공백/따옴표가 나올 때까지를 한 토큰으로
+            # 공백이 나올 때까지를 한 토큰으로.
+            # 토큰 중간에 나타난 따옴표는 인용 부호 불균형으로 본다.
+            # (그렇지 않으면 SET k ab"cd" 가 토큰 3개로 쪼개져
+            #  진짜 원인과 무관한 '인자 개수 오류'가 보고된다.)
             buf = []
-            while i < n and not line[i].isspace() and line[i] != '"':
+            while i < n and not line[i].isspace():
+                if line[i] == '"':
+                    raise ValueError(_UNBALANCED_QUOTES)
                 buf.append(line[i])
                 i += 1
             tokens.append(''.join(buf))
@@ -102,9 +119,31 @@ def _wrong_args(cmd):
     return ('error', f"ERR wrong number of arguments for '{cmd}' command")
 
 
+# `$`가 아니라 `\Z`를 쓴다. 파이썬에서 `$`는 말미 개행 앞에서도 매치하므로
+# 따옴표 안 이스케이프로 만들어진 "1\n" 같은 토큰이 새어나간다.
+# `\d`는 유니코드 숫자(아랍-인도 숫자 등)까지 매치하므로 `[0-9]`를 쓴다.
+_INT_RE = re.compile(r'^[+-]?[0-9]+\Z')
+_INT64_MIN = -(1 << 63)
+_INT64_MAX = (1 << 63) - 1
+
+
 def _parse_int(s):
-    """정수 파싱. 부호/공백 허용. 실패 시 ValueError."""
-    return int(s)
+    """Redis 호환 정수 파싱. ASCII 부호와 ASCII 숫자만 허용한다.
+
+    int()를 그대로 쓰면 언더스코어 리터럴(1_000), 앞뒤 공백(" 12 "),
+    유니코드 Nd 숫자(١٢)가 통과한다. 또 범위 검사가 없으면 EXPIRE의
+    float 연산에서 OverflowError가 나 REPL 프로세스가 통째로 죽는다.
+
+    실패 시 ValueError를 던지며, 호출부가 표준 에러 문자열로 변환한다.
+    음수 허용은 필수다 — EXPIRE는 seconds <= 0을 '즉시 만료'라는
+    명세 동작으로 사용한다.
+    """
+    if not _INT_RE.match(s):
+        raise ValueError('not an integer')
+    v = int(s)
+    if not (_INT64_MIN <= v <= _INT64_MAX):
+        raise ValueError('out of range')
+    return v
 
 
 def dispatch(redis, tokens):
@@ -147,7 +186,11 @@ def dispatch(redis, tokens):
         return redis.cmd_dbsize()
 
     if cmd == 'KEYS':
-        # 단순화: 인자가 있어도 무시(스펙은 패턴 매칭을 구현하지 않음)
+        # 명세상 패턴 매칭은 미구현이므로 인자를 받지 않는 명령이다.
+        # DBSIZE와 동일하게 개수를 엄격히 검사한다. 인자를 조용히 무시하면
+        # `KEYS *`가 마치 패턴 매칭이 되는 것처럼 보이는 잘못된 신호를 준다.
+        if len(args) != 0:
+            return _wrong_args('KEYS')
         return redis.cmd_keys()
 
     if cmd == 'CONFIG':
@@ -209,6 +252,12 @@ def repl(redis=None, prompt='mini-redis> '):
             # Ctrl+C는 그 한 줄만 무시하고 계속 받는다.
             print()
             continue
+        except UnicodeDecodeError:
+            # 입력 스트림이 선언된 인코딩으로 디코딩되지 않는다(예: UTF-8 콘솔에
+            # UTF-16 붙여넣기). 디코더가 같은 바이트에서 계속 걸려 무한 루프가
+            # 되므로 한 줄 무시가 아니라 세션을 정리하며 끝낸다.
+            print('(error) ERR Protocol error: invalid input encoding')
+            break
 
         line = line.strip()
         if not line:
@@ -220,12 +269,20 @@ def repl(redis=None, prompt='mini-redis> '):
             print(f'(error) ERR {e}')
             continue
 
-        result = dispatch(redis, tokens)
-        if result is None:
+        # 최상위 가드: 어떤 내부 예외도 REPL 전체를 죽여 인메모리 데이터를
+        # 날리지 못하게 한다. print는 try 밖에 둔다 — 출력 중 BrokenPipe 같은
+        # 오류를 '내부 오류'로 오인해 삼키지 않기 위해서다.
+        try:
+            result = dispatch(redis, tokens)
+            if result is None:
+                continue
+            if result[0] == 'exit':
+                break
+            output = format_result(result)
+        except Exception as e:  # noqa: BLE001 - CLI 최상위 방어선
+            print(f'(error) ERR internal error: {e}')
             continue
-        if result[0] == 'exit':
-            break
-        print(format_result(result))
+        print(output)
 
 
 if __name__ == '__main__':

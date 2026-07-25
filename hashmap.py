@@ -2,7 +2,8 @@
 
 각 버킷은 이중 연결 리스트(DoublyLinkedList)를 사용해 충돌을 해결한다.
 로드 팩터(저장된 키 개수 / 버킷 개수)가 0.75를 넘으면 버킷을 2배로
-늘려서 다시 재배치(rehash)한다.
+늘려서 다시 재배치(rehash)하고, 반대로 0.1875 아래로 헐거워지면
+버킷을 절반으로 줄인다.
 
 내장 dict 사용은 금지되어 있으므로, 버킷 테이블 자체는 '고정 길이
 인덱스 접근 배열' 용도로 파이썬 list를 사용한다.
@@ -15,11 +16,16 @@ class HashMap:
     """문자열 키 기반의 해시맵.
 
     충돌 해결: 체이닝(같은 버킷 안에서 이중 연결 리스트로 노드 연결).
-    로드 팩터가 0.75를 넘으면 버킷 수를 2배로 확장한다.
+    로드 팩터가 0.75를 넘으면 버킷 수를 2배로 확장하고,
+    0.1875 밑으로 떨어지면 절반으로 축소한다.
     """
 
     _INITIAL_CAPACITY = 8
     _LOAD_FACTOR = 0.75
+    # 축소 임계는 확장 임계의 1/4로 잡는다. 축소 직후 로드 팩터가
+    # size/(cap/2) < 0.375 라 확장 임계 0.75의 절반에 머물러
+    # '축소 -> 즉시 재확장'이 반복되는 진동이 생기지 않는다.
+    _SHRINK_FACTOR = 0.1875
 
     # FNV-1a 해시 상수(64비트)
     _FNV_OFFSET = 0xcbf29ce484222325
@@ -34,7 +40,10 @@ class HashMap:
     # ------- public API -------
 
     def put(self, key, value):
-        """key에 value를 저장한다. 같은 키가 있으면 덮어쓴다."""
+        """key에 value를 저장한다. 같은 키가 있으면 덮어쓴다.
+
+        반환: 새로 삽입했으면 True, 기존 키를 덮어썼으면 False.
+        """
         bucket = self._buckets[self._index(key, self._capacity)]
         node = self._find_in_bucket(bucket, key)
         if node is not None:
@@ -63,14 +72,21 @@ class HashMap:
         _, value = node.data
         bucket.remove_node(node)
         self._size -= 1
+        self._maybe_shrink()
         return value
 
     def contains(self, key):
+        """key가 저장되어 있으면 True. 값이 None이어도 True다."""
         bucket = self._buckets[self._index(key, self._capacity)]
         return self._find_in_bucket(bucket, key) is not None
 
     def keys(self):
-        """저장된 모든 key를 리스트로 반환(순서 보장 없음)."""
+        """저장된 모든 key를 리스트로 반환(순서 보장 없음).
+
+        버킷 순회 순서에 의존하므로 삽입 순서도, 정렬 순서도 아니다.
+        호출자는 순서에 의존해서는 안 된다.
+        반환 리스트는 호출 시점의 스냅샷이라 순회 중 원본을 수정해도 안전하다.
+        """
         result = []
         for bucket in self._buckets:
             for data in bucket.iter_data():
@@ -78,7 +94,12 @@ class HashMap:
         return result
 
     def size(self):
+        """저장된 키의 개수."""
         return self._size
+
+    def capacity(self):
+        """현재 버킷 테이블의 길이(디버깅/테스트용)."""
+        return self._capacity
 
     def __len__(self):
         return self._size
@@ -105,6 +126,7 @@ class HashMap:
         return h
 
     def _index(self, key, capacity):
+        """해시값을 버킷 테이블 인덱스로 접는다."""
         return self._hash(key) % capacity
 
     @staticmethod
@@ -123,6 +145,20 @@ class HashMap:
             if node.data[0] == key:
                 return node
         return None
+
+    def _maybe_shrink(self):
+        """너무 헐거워진 버킷 테이블을 목표 용량까지 줄인다.
+
+        축소 경로가 없으면 대량 삭제(예: LRU eviction) 후에도 버킷 배열이
+        최대 크기로 남아 keys() 순회가 실제 키 수와 무관하게 느려지고
+        메모리도 회수되지 않는다.
+        """
+        new_capacity = self._capacity
+        while (new_capacity > self._INITIAL_CAPACITY
+               and self._size < new_capacity * self._SHRINK_FACTOR):
+            new_capacity //= 2
+        if new_capacity != self._capacity:
+            self._resize(new_capacity)
 
     def _resize(self, new_capacity):
         """버킷 테이블을 new_capacity 크기로 다시 만들고 모든 키를 재배치한다."""

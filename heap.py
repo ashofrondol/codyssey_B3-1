@@ -13,26 +13,35 @@ peek 한 번으로 찾을 수 있다.
 class MinHeap:
     """최소 힙. 가장 작은 원소가 항상 인덱스 0에 위치한다."""
 
+    __slots__ = ('_data',)
+
     def __init__(self):
-        # list는 '인덱스 접근/append 가능한 배열'로만 사용한다.
+        # list는 '인덱스 접근/끝에서의 append·pop이 가능한 배열'로만 사용한다.
+        # 완전 이진 트리를 인덱스 산술로 표현하기 위한 백업 배열이며,
+        # 키-값 매핑이나 선형 탐색 저장소로는 쓰지 않는다.
         self._data = []
 
     def __len__(self):
         return len(self._data)
 
     def size(self):
+        """힙에 들어 있는 원소 개수."""
         return len(self._data)
 
     def is_empty(self):
+        """원소가 하나도 없으면 True."""
         return len(self._data) == 0
 
     def push(self, item):
-        """원소 추가 후 위로 끌어올려 힙 성질을 회복한다."""
+        """원소 추가 후 위로 끌어올려 힙 성질을 회복한다. O(log n)."""
         self._data.append(item)
         self._heapify_up(len(self._data) - 1)
 
     def pop(self):
-        """루트(최솟값)를 꺼낸다. 비어 있으면 None."""
+        """루트(최솟값)를 꺼낸다. 비어 있으면 None. O(log n).
+
+        마지막 원소를 루트로 옮긴 뒤 아래로 내려보내 힙 성질을 회복한다.
+        """
         if not self._data:
             return None
         top = self._data[0]
@@ -43,7 +52,7 @@ class MinHeap:
         return top
 
     def peek(self):
-        """루트(최솟값)를 꺼내지 않고 들여다본다. 비어 있으면 None."""
+        """루트(최솟값)를 꺼내지 않고 들여다본다. 비어 있으면 None. O(1)."""
         if not self._data:
             return None
         return self._data[0]
