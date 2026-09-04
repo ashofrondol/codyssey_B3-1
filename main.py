@@ -14,7 +14,7 @@
 
 import re
 
-from mini_redis import MiniRedis
+from mini_redis import ERR_NOT_INTEGER, MiniRedis
 
 
 _UNBALANCED_QUOTES = 'Protocol error: unbalanced quotes in request'
@@ -206,7 +206,7 @@ def dispatch(redis, tokens):
             try:
                 v = _parse_int(args[2])
             except ValueError:
-                return ('error', 'ERR value is not an integer or out of range')
+                return ('error', ERR_NOT_INTEGER)
             return redis.cmd_config_set_maxmemory(v)
         return ('error', f"ERR Unsupported CONFIG subcommand: {args[0]}")
 
@@ -224,7 +224,7 @@ def dispatch(redis, tokens):
         try:
             seconds = _parse_int(args[1])
         except ValueError:
-            return ('error', 'ERR value is not an integer or out of range')
+            return ('error', ERR_NOT_INTEGER)
         return redis.cmd_expire(args[0], seconds)
 
     if cmd == 'TTL':

@@ -32,6 +32,12 @@ from heap import MinHeap
 from linked_list import DoublyLinkedList
 
 
+# 사용자에게 보이는 에러 문구는 코어와 CLI가 함께 쓰므로 여기서 한 번만 정의한다.
+# 양쪽이 각자 리터럴을 들고 있으면 한쪽만 고쳐졌을 때 출력이 조용히 갈린다.
+ERR_NOT_INTEGER = 'ERR value is not an integer or out of range'
+ERR_OOM = "OOM command not allowed when used_memory > 'maxmemory'"
+
+
 class _Entry:
     """저장소 내부에서 키 하나를 표현하는 객체."""
 
@@ -46,9 +52,6 @@ class _Entry:
 
 class MiniRedis:
     """Mini Redis 코어 엔진."""
-
-    _OOM_MSG = "OOM command not allowed when used_memory > 'maxmemory'"
-    _RANGE_MSG = 'ERR value is not an integer or out of range'
 
     # TTL 힙이 '살아있는 키 수'의 몇 배를 넘으면 재구축할지. 재구축 사이에
     # 힙이 최소 2배로 벌어져야 하므로 상각 비용은 O(log n)에 머문다.
@@ -198,7 +201,7 @@ class MiniRedis:
         # 이때 축출을 시도하지 않으므로 기존 키/값/TTL은 전부 그대로 살아남고
         # evicted_keys도 변하지 않는다.
         if self._maxmemory > 0 and new_size > self._maxmemory:
-            return ('error', self._OOM_MSG)
+            return ('error', ERR_OOM)
 
         # 기존 키가 있고 만료되지 않았다면 먼저 제거한다.
         # (덮어쓰기 시 기존 TTL 초기화 → 새 엔트리는 expire_at=None이므로 자연 만족)
@@ -212,7 +215,7 @@ class MiniRedis:
         # 안전망: 모두 비웠는데도 안 들어간다면 OOM (이 분기는 사실상
         # 첫 줄의 단일 엔트리 검사로 이미 걸러진다)
         if self._maxmemory > 0 and self._used_memory + new_size > self._maxmemory:
-            return ('error', self._OOM_MSG)
+            return ('error', ERR_OOM)
 
         # 신규/덮어쓰기와 무관하게 SET은 해당 키를 MRU로 만든다.
         lru_node = self._lru.insert_front(key)
@@ -280,7 +283,7 @@ class MiniRedis:
         반환: ('ok',) | ('error', ...)
         """
         if bytes_value < 0:
-            return ('error', self._RANGE_MSG)
+            return ('error', ERR_NOT_INTEGER)
         self._maxmemory = bytes_value
         # 새 제한이 현재 사용량보다 작으면 즉시 만료 회수 + LRU 축출을 수행한다.
         if self._maxmemory > 0:
