@@ -5,7 +5,7 @@ import unittest
 
 from tests.helpers import FakeClock  # noqa: F401  (sys.path 부트스트랩)
 
-from heap import MinHeap
+from minredis.heap import MinHeap
 
 
 class TestMinHeap(unittest.TestCase):

@@ -4,11 +4,13 @@ import contextlib
 import io
 import unittest
 
-from tests.helpers import FakeClock
+from tests.helpers import ROOT, FakeClock
 
-import main
-from main import _parse_int, dispatch, format_result, tokenize
-from mini_redis import MiniRedis
+from minredis import cli
+from minredis.cli import (COMMANDS, _parse_int, dispatch, format_result,
+                          tokenize)
+from minredis.mini_redis import MiniRedis
+from minredis.protocol import ResultKind
 
 
 class TestTokenize(unittest.TestCase):
@@ -38,21 +40,21 @@ class TestTokenize(unittest.TestCase):
         for line in ('SET k a"b', 'SET k ab"cd"ef'):
             with self.assertRaises(ValueError) as ctx:
                 tokenize(line)
-            self.assertEqual(str(ctx.exception), main._UNBALANCED_QUOTES)
+            self.assertEqual(str(ctx.exception), cli._UNBALANCED_QUOTES)
 
     def test_closing_quote_must_be_followed_by_space(self):
         """닫는 따옴표 뒤에 바로 문자가 오는 경우도 같은 에러여야 한다(비대칭 방지)."""
         for line in ('SET k "ab"cd', 'SET "k"x v'):
             with self.assertRaises(ValueError) as ctx:
                 tokenize(line)
-            self.assertEqual(str(ctx.exception), main._UNBALANCED_QUOTES)
+            self.assertEqual(str(ctx.exception), cli._UNBALANCED_QUOTES)
         # 정상 케이스는 영향 없음
         self.assertEqual(tokenize('SET k "a b" '), ['SET', 'k', 'a b'])
         self.assertEqual(tokenize('SET "k" "v"'), ['SET', 'k', 'v'])
 
     def test_unbalanced_quotes_message_literal(self):
         """에러 문구가 실제 Redis 프로토콜 문구와 일치해야 한다."""
-        self.assertEqual(main._UNBALANCED_QUOTES,
+        self.assertEqual(cli._UNBALANCED_QUOTES,
                          'Protocol error: unbalanced quotes in request')
 
 
@@ -92,6 +94,35 @@ class TestFormatResult(unittest.TestCase):
         self.assertEqual(format_result(('info', 22, 30, 1)),
                          'used_memory:22\nmaxmemory:30\nevicted_keys:1')
 
+    def test_unknown_kind_raises_instead_of_printing_blank_line(self):
+        """새 명령을 추가하며 여기 분기를 빠뜨리면 빈 줄이 아니라 예외여야 한다.
+
+        예전에는 마지막 줄이 return '' 이라, 포매터에 케이스를 빠뜨려도
+        테스트 전부가 통과하고 REPL에는 빈 줄만 찍혔다.
+        """
+        with self.assertRaises(ValueError) as ctx:
+            format_result(('newkind', 1))
+        self.assertIn('newkind', str(ctx.exception))
+
+    def test_every_result_kind_has_a_format(self):
+        """프로토콜에 선언된 종류는 전부 포매터가 알아야 한다.
+
+        EXIT는 REPL이 가로채므로 포매터에 도달하지 않는다.
+        """
+        samples = (
+            (ResultKind.OK,), (ResultKind.NIL,), (ResultKind.INT, 1),
+            (ResultKind.BULK, 'v'), (ResultKind.ARRAY, ['a']),
+            (ResultKind.INFO, 0, 0, 0), (ResultKind.ERROR, 'ERR x'),
+        )
+        formatted = [s[0] for s in samples]
+        for kind in ResultKind:
+            if kind == ResultKind.EXIT:
+                continue
+            self.assertIn(kind, formatted, f'{kind} 샘플이 빠졌다')
+        for sample in samples:
+            with self.subTest(kind=sample[0]):
+                self.assertIsInstance(format_result(sample), str)
+
 
 class TestDispatch(unittest.TestCase):
 
@@ -116,22 +147,11 @@ class TestDispatch(unittest.TestCase):
         self.assertEqual(self.run_line('hello'),
                          ('error', "ERR unknown command 'hello'"))
 
-    def test_wrong_number_of_arguments(self):
-        cases = [
-            ('GET', 'GET'), ('GET a b', 'GET'),
-            ('SET k', 'SET'), ('SET a b c', 'SET'),
-            ('DEL', 'DEL'), ('EXISTS', 'EXISTS'),
-            ('TTL', 'TTL'), ('EXPIRE k', 'EXPIRE'),
-            ('DBSIZE extra', 'DBSIZE'),
-            ('KEYS *', 'KEYS'), ('KEYS a b', 'KEYS'),
-            ('CONFIG SET maxmemory', 'CONFIG'),
-            ('INFO memory extra', 'INFO'),
-        ]
-        for line, cmd in cases:
-            with self.subTest(line=line):
-                self.assertEqual(
-                    self.run_line(line),
-                    ('error', f"ERR wrong number of arguments for '{cmd}' command"))
+    def test_config_subcommand_arity(self):
+        """표의 (min, max) 한 쌍으로 표현되지 않는 CONFIG 안쪽 인자 수."""
+        self.assertEqual(
+            self.run_line('CONFIG SET maxmemory'),
+            ('error', "ERR wrong number of arguments for 'CONFIG' command"))
 
     def test_keys_takes_no_arguments(self):
         self.run_line('SET a 1')
@@ -198,6 +218,56 @@ class TestDispatch(unittest.TestCase):
                          '(integer) 3')   # 시계 고정 시 경과 0초 -> 3
 
 
+def _line_with_args(name, count):
+    """명령 이름 + 인자 count개로 이루어진 입력 한 줄."""
+    return ' '.join([name] + [f'a{i}' for i in range(count)])
+
+
+class TestCommandTableArity(unittest.TestCase):
+    """인자 개수 에러를 명령 테이블에서 생성해 검사한다.
+
+    예전에는 케이스 13개를 손으로 적어 뒀다. 명령을 추가하면서 줄 추가를
+    빠뜨려도 105개 테스트가 전부 통과했다 — 검사가 표를 따라오지 않았기
+    때문이다. 이제 표에 행을 더하면 검사가 저절로 붙는다.
+    """
+
+    def setUp(self):
+        self.r = MiniRedis(now_fn=FakeClock())
+
+    def test_table_covers_every_documented_command(self):
+        names = [command.name for command in COMMANDS]
+        for expected in ('SET', 'GET', 'DEL', 'EXISTS', 'DBSIZE', 'KEYS',
+                         'CONFIG', 'INFO', 'EXPIRE', 'TTL', 'EXIT', 'QUIT'):
+            self.assertIn(expected, names)
+        self.assertEqual(len(names), len(COMMANDS), '중복된 명령 이름이 있다')
+
+    def test_arity_violations_are_reported_for_every_command(self):
+        checked = 0
+        for command in COMMANDS:
+            lines = []
+            if command.min_args > 0:
+                lines.append(_line_with_args(command.name, command.min_args - 1))
+            if command.max_args is not None:
+                lines.append(_line_with_args(command.name, command.max_args + 1))
+            for line in lines:
+                checked += 1
+                with self.subTest(line=line):
+                    self.assertEqual(
+                        dispatch(self.r, tokenize(line)),
+                        ('error', 'ERR wrong number of arguments for '
+                                  f"'{command.name}' command"))
+        # 표가 전부 (0, None)이 되어 아무것도 검사하지 않는 상태를 막는다.
+        self.assertGreaterEqual(checked, 12)
+
+    def test_arity_bounds_are_consistent(self):
+        for command in COMMANDS:
+            with self.subTest(command=command.name):
+                self.assertGreaterEqual(command.min_args, 0)
+                if command.max_args is not None:
+                    self.assertGreaterEqual(command.max_args, command.min_args)
+                self.assertEqual(command.name, command.name.upper())
+
+
 class _BoomRedis(MiniRedis):
     """cmd_get이 항상 터지는 엔진 — REPL 최상위 가드 검증용."""
 
@@ -218,12 +288,12 @@ class TestReplGuard(unittest.TestCase):
                 raise EOFError
 
         buf = io.StringIO()
-        main.input = fake_input          # 모듈 전역이 builtins보다 먼저 조회된다
+        cli.input = fake_input           # 모듈 전역이 builtins보다 먼저 조회된다
         try:
             with contextlib.redirect_stdout(buf):
-                main.repl(redis=redis)
+                cli.repl(redis=redis)
         finally:
-            del main.input
+            del cli.input
         return buf.getvalue()
 
     def test_internal_exception_does_not_kill_repl(self):
@@ -253,7 +323,7 @@ class TestReplGuard(unittest.TestCase):
     def test_prompt_string_is_exactly_mini_redis(self):
         """명세가 프롬프트 문자열을 고정하고 있다."""
         import inspect
-        sig = inspect.signature(main.repl)
+        sig = inspect.signature(cli.repl)
         self.assertEqual(sig.parameters['prompt'].default, 'mini-redis> ')
 
         seen = []
@@ -262,12 +332,12 @@ class TestReplGuard(unittest.TestCase):
             seen.append(prompt)
             raise EOFError
 
-        main.input = capture_input
+        cli.input = capture_input
         try:
             with contextlib.redirect_stdout(io.StringIO()):
-                main.repl(redis=MiniRedis(now_fn=FakeClock()))
+                cli.repl(redis=MiniRedis(now_fn=FakeClock()))
         finally:
-            del main.input
+            del cli.input
         self.assertEqual(seen, ['mini-redis> '])
 
     def test_error_line_does_not_terminate_loop(self):
@@ -291,18 +361,27 @@ class TestConstraints(unittest.TestCase):
     BANNED = ('dict', 'set', 'frozenset', 'collections',
               'defaultdict', 'OrderedDict', 'Counter', 'deque')
 
+    # 3.9+ 내장 제네릭 표기(list[str] 등). dict/set/frozenset은 이미 BANNED라
+    # 이름 단계에서 걸리므로 여기서는 나머지만 본다. typing 주석을 쓰기
+    # 시작한 이상, 다음 사람이 list[str]을 적는 것이 가장 그럴듯한 위반이다.
+    BUILTIN_GENERICS = ('list', 'tuple', 'type')
+
     def test_no_banned_builtins_anywhere(self):
         import ast
         import os
 
-        root = os.path.dirname(os.path.abspath(main.__file__))
+        # 저장소 루트 전체를 훑는다. 패키지 안쪽만 보면 루트 shim과 테스트가
+        # 검사 밖으로 빠지고, 새로 생긴 디렉터리는 저절로 검사 범위에 들어온다.
         violations = []
-        for dirpath, dirnames, filenames in os.walk(root):
-            dirnames[:] = [d for d in dirnames if d != '__pycache__']
+        scanned = []
+        for dirpath, dirnames, filenames in os.walk(ROOT):
+            dirnames[:] = [d for d in dirnames
+                           if d != '__pycache__' and not d.startswith('.')]
             for fn in filenames:
                 if not fn.endswith('.py'):
                     continue
                 path = os.path.join(dirpath, fn)
+                scanned.append(os.path.relpath(path, ROOT))
                 with io.open(path, encoding='utf-8') as fh:
                     tree = ast.parse(fh.read())
                 for node in ast.walk(tree):
@@ -317,11 +396,51 @@ class TestConstraints(unittest.TestCase):
                         names = ','.join(a.name for a in node.names)
                         if 'collections' in mod or 'collections' in names:
                             violations.append(f'{fn}:{node.lineno}: collections import')
+                    elif (isinstance(node, ast.Subscript)
+                          and isinstance(node.value, ast.Name)
+                          and node.value.id in self.BUILTIN_GENERICS):
+                        violations.append(
+                            f'{fn}:{node.lineno}: '
+                            f'{node.value.id}[...] 내장 제네릭은 3.9+')
                     elif isinstance(node, ast.NamedExpr):
                         violations.append(f'{fn}:{node.lineno}: walrus는 3.8 미만 비호환')
                     elif hasattr(ast, 'Match') and isinstance(node, getattr(ast, 'Match')):
                         violations.append(f'{fn}:{node.lineno}: match 문은 3.10+')
         self.assertEqual(violations, [], '\n'.join(violations))
+        # 검사가 '아무 파일도 못 찾아서' 통과하는 상태를 막는다.
+        for expected in ('main.py', os.path.join('minredis', 'mini_redis.py'),
+                         os.path.join('minredis', 'cli.py'),
+                         os.path.join('tests', 'test_cli.py')):
+            self.assertIn(expected, scanned)
+
+    def test_every_file_parses_as_python_38(self):
+        """과제가 요구하는 하한(3.8) 파서로 전 파일이 읽히는지 본다.
+
+        AST 노드 검사는 '아는 위반'만 잡는다. feature_version=(3, 8) 파싱은
+        match 문·except*·괄호 컨텍스트 매니저처럼 아직 목록에 없는 3.9+
+        문법까지 한꺼번에 막는다.
+        """
+        import ast
+        import os
+
+        failures = []
+        checked = 0
+        for dirpath, dirnames, filenames in os.walk(ROOT):
+            dirnames[:] = [d for d in dirnames
+                           if d != '__pycache__' and not d.startswith('.')]
+            for fn in filenames:
+                if not fn.endswith('.py'):
+                    continue
+                path = os.path.join(dirpath, fn)
+                with io.open(path, encoding='utf-8') as fh:
+                    source = fh.read()
+                checked += 1
+                try:
+                    ast.parse(source, feature_version=(3, 8))
+                except SyntaxError as exc:
+                    failures.append(f'{os.path.relpath(path, ROOT)}: {exc}')
+        self.assertEqual(failures, [], '\n'.join(failures))
+        self.assertGreaterEqual(checked, 5)
 
 
 if __name__ == '__main__':

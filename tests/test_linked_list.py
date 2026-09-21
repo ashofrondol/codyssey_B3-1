@@ -4,7 +4,7 @@ import unittest
 
 from tests.helpers import FakeClock  # noqa: F401  (sys.path 부트스트랩)
 
-from linked_list import DoublyLinkedList, Node
+from minredis.linked_list import DoublyLinkedList, Node
 
 
 class TestDoublyLinkedList(unittest.TestCase):

@@ -459,6 +459,11 @@ mini-redis> HELLO
 
 > 점검 방식: 저장소의 실제 소스를 명세의 요구사항 ID 와 1:1 대조. 판정 근거는 파일 경로로 명시.
 > README 의 주장은 근거로 채택하지 않았고, 전부 소스 코드 · 실제 REPL 실행 · AST 검사 · 뮤테이션 검증으로 재확인했다.
+>
+> **근거 좌표 표기.** 근거는 `파일#심볼` 형태로 적는다 (예: `minredis/mini_redis.py#cmd_ttl`).
+> 처음에는 `파일:줄번호` 였는데, 코드를 한 줄 옮길 때마다 문서가 조용히 거짓이 되었다 —
+> 줄번호는 리팩터링에 견디지 못하는 좌표다. 심볼 이름은 견딘다. 그리고 여기 적힌 좌표가
+> 실제로 존재하는지는 `tests/test_docs.py` 가 매 테스트 실행마다 확인한다.
 
 **종합 판정: 충족** — 필수 53개 중 충족 53 / 부분 0 / 미충족 0 / 로컬검증불가 0
 **보너스: 5개 중 충족 0 / 미충족 5** (보너스는 선택 항목이며 종합 판정에 반영하지 않았다)
@@ -467,104 +472,104 @@ mini-redis> HELLO
 
 | ID | 제약 | 판정 | 근거 / 비고 |
 | --- | --- | --- | --- |
-| C1 | `dict`/`set`/`collections` 사용 금지 | ✅ 충족 | 저장소 전 `.py` 파일을 AST 로 직접 훑어 **금지 이름·dict/set 리터럴·컴프리헨션·`collections` import 0건** 확인. 저장소 자체도 동일 검사를 테스트로 들고 있다 — `tests/test_cli.py:286-323` (`TestConstraints.test_no_banned_builtins_anywhere`) |
-| C2 | 내장 컬렉션으로 해시맵/캐시 대체 금지 | ✅ 충족 | `list` 는 ① 버킷 테이블 (`hashmap.py:165-172`, `[None] * capacity`) ② 힙 백업 배열 (`heap.py:22`) ③ 임시 스냅샷 (`hashmap.py:100-104`) 로만 쓰인다. 키→값 매핑·체이닝·노드 연결·힙 순서 유지는 전부 직접 구현 코드가 수행한다 |
-| C3 | 자료구조를 독립 모듈로 분리 (단방향 의존) | ✅ 충족 | `linked_list.py` (import 없음) ← `hashmap.py:12` ← `mini_redis.py:30-32` ← `main.py:17`. `heap.py` 는 import 0건. 자료구조 모듈이 `mini_redis`/`main` 을 역참조하는 곳 없음 (전 파일 import 목록 확인) |
-| C4 | 핵심 클래스/함수에 주석 또는 docstring | ✅ 충족 | 5개 모듈 전부 모듈 docstring + 클래스/메서드 docstring 보유. 예: `linked_list.py:1-9,13-20,32-41`, `hashmap.py:1-10,16-31,119-141`, `heap.py:1-10,14`, `mini_redis.py:1-26,42`, `main.py:1-13,26-31` |
-| C5 | 네트워크 미구현 | ✅ 충족 | `socket`/`http`/`asyncio` import 0건. 입력은 `main.py:247` 의 `input()` 뿐 |
-| C6 | 영속성 미구현 | ✅ 충족 | 파일 쓰기 호출 없음 (`open(` 은 테스트의 AST 검사에서만 등장 — `tests/test_cli.py:304`) |
-| C7 | List/Set/Sorted Set 미구현 | ✅ 충족 | `main.py:163-235` 디스패처가 String + 메모리 + TTL 명령만 다룬다 |
+| C1 | `dict`/`set`/`collections` 사용 금지 | ✅ 충족 | 저장소 전 `.py` 파일을 AST 로 직접 훑어 **금지 이름·dict/set 리터럴·컴프리헨션·`collections` import 0건** 확인. 저장소 자체도 동일 검사를 테스트로 들고 있다 — `tests/test_cli.py#test_no_banned_builtins_anywhere`. 이 검사는 저장소 루트 전체를 훑고, 스스로 몇 개 파일을 봤는지까지 단언해 '아무 파일도 못 찾아서 통과'하는 상태를 막는다 |
+| C2 | 내장 컬렉션으로 해시맵/캐시 대체 금지 | ✅ 충족 | `list` 는 ① 버킷 테이블 (`minredis/hashmap.py#_make_buckets`, `[None] * capacity`) ② 힙 백업 배열 (`minredis/heap.py#__init__`) ③ 임시 스냅샷 (`minredis/hashmap.py#keys`) 로만 쓰인다. 키→값 매핑·체이닝·노드 연결·힙 순서 유지는 전부 직접 구현 코드가 수행한다 |
+| C3 | 자료구조를 독립 모듈로 분리 (단방향 의존) | ✅ 충족 | `minredis/linked_list.py` (import 없음) ← `minredis/hashmap.py` ← `minredis/mini_redis.py` ← `minredis/cli.py`. `minredis/heap.py` 는 import 0건. 자료구조 모듈이 `mini_redis`/`cli` 를 역참조하는 곳 없음 (전 파일 import 목록 확인) |
+| C4 | 핵심 클래스/함수에 주석 또는 docstring | ✅ 충족 | 5개 모듈 전부 모듈 docstring + 클래스/메서드 docstring 보유. 예: `minredis/linked_list.py#Node,DoublyLinkedList`, `minredis/hashmap.py#_hash`, `minredis/heap.py#MinHeap`, `minredis/mini_redis.py#_Entry`, `minredis/cli.py#tokenize` |
+| C5 | 네트워크 미구현 | ✅ 충족 | `socket`/`http`/`asyncio` import 0건. 입력은 `minredis/cli.py#repl` 의 `input()` 뿐 |
+| C6 | 영속성 미구현 | ✅ 충족 | 파일 쓰기 호출 없음 (`open(` 은 테스트의 AST 검사에서만 등장 — `tests/test_cli.py#test_no_banned_builtins_anywhere`) |
+| C7 | List/Set/Sorted Set 미구현 | ✅ 충족 | `minredis/cli.py#dispatch` 디스패처가 String + 메모리 + TTL 명령만 다룬다 |
 | C8 | 동시성 미구현 | ✅ 충족 | `threading`/`lock` 사용 0건 |
-| — | Python 3.8 호환 (3.9+ 문법 금지) | ✅ 충족 | walrus·`match`·`list[str]`/`dict[str,int]`·`X \| Y`·`removeprefix/removesuffix` 전부 grep 0건. `tests/test_cli.py:318-321` 이 walrus·match 를 AST 로 자체 차단 |
-| — | `python main.py` 실행 가능 | ✅ 충족 | 실제 실행해 REPL 동작 확인 (아래 🧪 절). `main.py:288-289` |
+| — | Python 3.8 호환 (3.9+ 문법 금지) | ✅ 충족 | walrus·`match`·`list[str]`/`dict[str,int]`·`X \| Y`·`removeprefix/removesuffix` 전부 grep 0건. `tests/test_cli.py#test_no_banned_builtins_anywhere` 이 walrus·match·내장 제네릭을 AST 로 차단하고, `tests/test_cli.py#test_every_file_parses_as_python_38` 이 전 파일을 `ast.parse(feature_version=(3, 8))` 로 다시 읽어 아직 목록에 없는 3.9+ 문법까지 막는다 |
+| — | `python main.py` 실행 가능 | ✅ 충족 | 실제 실행해 REPL 동작 확인 (아래 🧪 절). 루트 `main.py` 는 `minredis/cli.py#repl` 을 부르는 shim 이다 |
 
 #### R1. 기본 자료구조 직접 구현
 
 | ID | 요구사항 (요약) | 판정 | 근거 / 비고 |
 | --- | --- | --- | --- |
-| R1-1 | 노드 구조: `prev`/`next`/`data` | ✅ 충족 | `linked_list.py:22` — `__slots__ = ('prev','next','data','owner')`. `owner` 는 "남의 리스트 노드 제거" 방어용 추가 필드이며 명세 3필드는 그대로 존재 |
-| R1-2 | `insert_front`/`insert_back`/`remove_front`/`remove_back`/`remove_node`/`move_to_front` | ✅ 충족 | `linked_list.py:73,81,89,95,101,118` — 6개 전부 존재. `tests/test_linked_list.py` 가 6종 전수 검증 |
-| R1-3 | 모든 삽입/삭제/이동 O(1) | ✅ 충족 | head/tail sentinel (`linked_list.py:46-49`) 덕에 분기·탐색 없음. `remove_node`(`:107-116`) 는 포인터 4개 재연결만, `move_to_front`(`:123-131`) 는 떼내고 다시 끼우기만. `remove_front/back` 도 sentinel 이웃을 바로 잡아 `remove_node` 에 넘긴다 (`:93,99`) |
-| R1-4 | `put`/`get`/`remove`/`contains`/`keys`/`size` | ✅ 충족 | `hashmap.py:52,68,76,88,93,106` — 6개 전부 존재 |
-| R1-5 | 해시 함수 직접 설계 | ✅ 충족 | `hashmap.py:119-152` — FNV-1a 64비트를 바이트 루프로 직접 구현 (`h ^= byte; h = (h * PRIME) & MASK64`). 파이썬 내장 `hash()` 호출 0건. 해시값 생성(`_hash`)과 버킷 인덱스 산출(`_index`, `:154-163`)이 분리되어 있다 |
-| R1-6 | 체이닝 (권장: 이중 연결 리스트 재사용) | ✅ 충족 | `hashmap.py:12` 로 `DoublyLinkedList` 를 import, `:165-172` 에서 버킷마다 리스트 생성, `:62` `bucket.insert_back(...)`, `:174-180` `_find_in_bucket` 이 체인을 선형 탐색. 권장안을 그대로 따랐다 |
-| R1-7 | 로드 팩터 0.75 초과 시 버킷 2배 | ✅ 충족 | `hashmap.py:34` `_LOAD_FACTOR = 0.75`, `:64-65` `if self._size > self._capacity * self._LOAD_FACTOR: self._resize(self._capacity * 2)`. **"초과"(`>`)** 조건까지 정확. `_resize`(`:196-214`)가 전 키를 새 capacity 로 **재해싱**한다. 확장 시점은 `tests/test_hashmap.py` 가 7/13/25/49 로 고정 |
-| R1-8 | `push`/`pop`/`peek`/`size` | ✅ 충족 | `heap.py:35,40,54,27` — 4개 전부 존재 |
-| R1-9 | `_heapify_up`/`_heapify_down` | ✅ 충족 | `heap.py:62-70`, `:72-86`. 부모 `(i-1)//2`, 자식 `2i+1`/`2i+2` 인덱스 산술 사용 |
-| R1-10 | `(expire_at, key)` 형태 요소 처리 | ✅ 충족 | `mini_redis.py:318` `self._ttl_heap.push((expire_at, key))`, `:122` `expire_at, key = self._ttl_heap.peek()`. 힙은 튜플 비교만 쓰므로(`heap.py:66,79,81`) 타입 결합 없이 동작 |
+| R1-1 | 노드 구조: `prev`/`next`/`data` | ✅ 충족 | `minredis/linked_list.py#Node.__slots__` — `__slots__ = ('prev','next','data','owner')`. `owner` 는 "남의 리스트 노드 제거" 방어용 추가 필드이며 명세 3필드는 그대로 존재 |
+| R1-2 | `insert_front`/`insert_back`/`remove_front`/`remove_back`/`remove_node`/`move_to_front` | ✅ 충족 | `minredis/linked_list.py#insert_front,insert_back,remove_front,remove_back,remove_node,move_to_front` — 6개 전부 존재. `tests/test_linked_list.py` 가 6종 전수 검증 |
+| R1-3 | 모든 삽입/삭제/이동 O(1) | ✅ 충족 | head/tail sentinel (`minredis/linked_list.py#DoublyLinkedList.__init__`) 덕에 분기·탐색 없음. `remove_node`(`minredis/linked_list.py#remove_node`) 는 포인터 4개 재연결만, `move_to_front`(`minredis/linked_list.py#move_to_front`) 는 떼내고 다시 끼우기만. `remove_front/back` 도 sentinel 이웃을 바로 잡아 `remove_node` 에 넘긴다 (`minredis/linked_list.py#remove_front,remove_back`) |
+| R1-4 | `put`/`get`/`remove`/`contains`/`keys`/`size` | ✅ 충족 | `minredis/hashmap.py#put,get,remove,contains,keys,size` — 6개 전부 존재 |
+| R1-5 | 해시 함수 직접 설계 | ✅ 충족 | `minredis/hashmap.py#_hash` — FNV-1a 64비트를 바이트 루프로 직접 구현 (`h ^= byte; h = (h * PRIME) & MASK64`). 파이썬 내장 `hash()` 호출 0건. 해시값 생성(`_hash`)과 버킷 인덱스 산출(`_index`, `minredis/hashmap.py#_index`)이 분리되어 있다 |
+| R1-6 | 체이닝 (권장: 이중 연결 리스트 재사용) | ✅ 충족 | `minredis/hashmap.py` 로 `DoublyLinkedList` 를 import, `minredis/hashmap.py#_make_buckets` 에서 버킷마다 리스트 생성, `minredis/hashmap.py#put` `bucket.insert_back(...)`, `minredis/hashmap.py#_find_in_bucket` 이 체인을 선형 탐색. 권장안을 그대로 따랐다 |
+| R1-7 | 로드 팩터 0.75 초과 시 버킷 2배 | ✅ 충족 | `minredis/hashmap.py#_LOAD_FACTOR` `_LOAD_FACTOR = 0.75`, `minredis/hashmap.py#put` `if self._size > self._capacity * self._LOAD_FACTOR: self._resize(self._capacity * 2)`. **"초과"(`>`)** 조건까지 정확. `_resize`(`minredis/hashmap.py#_resize`)가 전 키를 새 capacity 로 **재해싱**한다. 확장 시점은 `tests/test_hashmap.py` 가 7/13/25/49 로 고정 |
+| R1-8 | `push`/`pop`/`peek`/`size` | ✅ 충족 | `minredis/heap.py#push,pop,peek,size` — 4개 전부 존재 |
+| R1-9 | `_heapify_up`/`_heapify_down` | ✅ 충족 | `minredis/heap.py#_heapify_up`, `minredis/heap.py#_heapify_down`. 부모 `(i-1)//2`, 자식 `2i+1`/`2i+2` 인덱스 산술 사용 |
+| R1-10 | `(expire_at, key)` 형태 요소 처리 | ✅ 충족 | `minredis/mini_redis.py#cmd_expire` `self._ttl_heap.push((expire_at, key))`, `minredis/mini_redis.py#_purge_expired_via_heap` `expire_at, key = self._ttl_heap.peek()`. 힙은 튜플 비교만 쓰므로(`minredis/heap.py#_heapify_up,_heapify_down`) 타입 결합 없이 동작 |
 
 #### R2. String 타입 명령어
 
 | ID | 요구사항 (요약) | 판정 | 근거 / 비고 |
 | --- | --- | --- | --- |
-| R2-1 | 키 명령은 실행 전 만료 확인, 만료 키는 삭제 후 '없는 키' 취급 | ✅ 충족 | `mini_redis.py:101-109` `_get_live_entry` 가 만료 시 `_hard_delete` 후 `None` 반환. GET/DEL/EXISTS/EXPIRE/TTL 전부 이 경로를 탄다 (`:234,247,258,307,333`). 접근 없는 만료 키까지 훑어야 하는 DBSIZE/KEYS/INFO 는 `_purge_expired_via_heap()` 선행 (`:265,274,298`) |
-| R2-2 | Redis 스타일 출력 `OK`/`(nil)`/`(integer) N`/`(error) ...` | ✅ 충족 | `main.py:87-113` `format_result`. 실행으로 4종 전부 확인 |
-| R2-3 | SET 성공 시 `OK` | ✅ 충족 | `mini_redis.py:225` → `main.py:90-91`. 실행 확인 |
-| R2-4 | 메모리 초과 시 LRU 제거 | ✅ 충족 | `mini_redis.py:213` `self._evict_to_fit(new_size)` |
-| R2-5 | 덮어쓰기 시 기존 TTL 초기화 | ✅ 충족 | `mini_redis.py:208-210` 에서 기존 엔트리를 통째로 제거하고 `:222` 에서 `expire_at=None` 인 새 `_Entry` 생성. 실행 검증: `SET k1 v1` → `EXPIRE k1 100` → `TTL k1`=99 → `SET k1 v2` → **`TTL k1`=`-1`** |
-| R2-6 | 없거나 만료 시 `(nil)` | ✅ 충족 | `mini_redis.py:234-236`. 실행 확인 |
-| R2-7 | 존재 시 `"value"` | ✅ 충족 | `mini_redis.py:238` `('bulk', ...)` → `main.py:97` `f'"{result[1]}"'` |
-| R2-8 | **반환 성공 시에만** LRU 갱신 | ✅ 충족 | `mini_redis.py:234-238` — `move_to_front` 는 `entry is None` 가드를 **통과한 뒤에만** 호출된다. 만료 삭제 경로(`:107`)는 갱신하지 않음 |
-| R2-9 | DEL `(integer) 1` / `(integer) 0` | ✅ 충족 | `mini_redis.py:247-251`. 실행 확인 (연속 DEL → 1, 0) |
-| R2-10 | DEL 시 LRU/TTL 구조에서도 함께 제거 | ✅ 충족 | `mini_redis.py:91-99` `_hard_delete` 가 LRU 노드 제거 + store 제거 + `used_memory` 보정. TTL 은 lazy deletion (R4-11 이 명시적으로 허용) 이며 `:129-130` 의 `expire_at` 일치 검사로 stale 이 걸러지고 `:134-155` 컴팩션이 상한을 잡는다. 실행 검증: TTL 걸린 키 DEL 후 `lru=0, store=0, used=0, TTL=-2` |
-| R2-11 | EXISTS 1/0 | ✅ 충족 | `mini_redis.py:253-258` |
-| R2-12 | DBSIZE `(integer) N` | ✅ 충족 | `mini_redis.py:260-266` |
-| R2-13 | 전체 키를 배열 형태로 출력 | ✅ 충족 | `main.py:104-107` — `N) "key"` 형식 (명세 해설이 권장한 형식). 실행 출력 `1) "user:3"` / `2) "user:2"` |
-| R2-14 | 키 없으면 `(empty array)` 류 표현 | ✅ 충족 | `main.py:102-103` — 정확히 `(empty array)`. 실행 확인 |
+| R2-1 | 키 명령은 실행 전 만료 확인, 만료 키는 삭제 후 '없는 키' 취급 | ✅ 충족 | `minredis/mini_redis.py#_get_live_entry` 가 만료 시 `_hard_delete` 후 `None` 반환. GET/DEL/EXISTS/EXPIRE/TTL 전부 이 경로를 탄다 (`minredis/mini_redis.py#cmd_get,cmd_del,cmd_exists,cmd_expire,cmd_ttl`). 접근 없는 만료 키까지 훑어야 하는 DBSIZE/KEYS/INFO 는 `_purge_expired_via_heap()` 선행 (`minredis/mini_redis.py#cmd_dbsize,cmd_keys,cmd_info_memory`) |
+| R2-2 | Redis 스타일 출력 `OK`/`(nil)`/`(integer) N`/`(error) ...` | ✅ 충족 | `minredis/cli.py#format_result`. 실행으로 4종 전부 확인 |
+| R2-3 | SET 성공 시 `OK` | ✅ 충족 | `minredis/mini_redis.py#cmd_set` → `minredis/cli.py#format_result`. 실행 확인 |
+| R2-4 | 메모리 초과 시 LRU 제거 | ✅ 충족 | `minredis/mini_redis.py#cmd_set` `self._evict_to_fit(new_size)` |
+| R2-5 | 덮어쓰기 시 기존 TTL 초기화 | ✅ 충족 | `minredis/mini_redis.py#cmd_set` 에서 기존 엔트리를 통째로 제거하고 `minredis/mini_redis.py#cmd_set` 에서 `expire_at=None` 인 새 `_Entry` 생성. 실행 검증: `SET k1 v1` → `EXPIRE k1 100` → `TTL k1`=99 → `SET k1 v2` → **`TTL k1`=`-1`** |
+| R2-6 | 없거나 만료 시 `(nil)` | ✅ 충족 | `minredis/mini_redis.py#cmd_get`. 실행 확인 |
+| R2-7 | 존재 시 `"value"` | ✅ 충족 | `minredis/mini_redis.py#cmd_get` `('bulk', ...)` → `minredis/cli.py#format_result` `f'"{result[1]}"'` |
+| R2-8 | **반환 성공 시에만** LRU 갱신 | ✅ 충족 | `minredis/mini_redis.py#cmd_get` — `move_to_front` 는 `entry is None` 가드를 **통과한 뒤에만** 호출된다. 만료 삭제 경로(`minredis/mini_redis.py#_get_live_entry`)는 갱신하지 않음 |
+| R2-9 | DEL `(integer) 1` / `(integer) 0` | ✅ 충족 | `minredis/mini_redis.py#cmd_del`. 실행 확인 (연속 DEL → 1, 0) |
+| R2-10 | DEL 시 LRU/TTL 구조에서도 함께 제거 | ✅ 충족 | `minredis/mini_redis.py#_hard_delete` 가 LRU 노드 제거 + store 제거 + `used_memory` 보정. TTL 은 lazy deletion (R4-11 이 명시적으로 허용) 이며 `minredis/mini_redis.py#_purge_expired_via_heap` 의 `expire_at` 일치 검사로 stale 이 걸러지고 `minredis/mini_redis.py#_maybe_compact_ttl_heap` 컴팩션이 상한을 잡는다. 실행 검증: TTL 걸린 키 DEL 후 `lru=0, store=0, used=0, TTL=-2` |
+| R2-11 | EXISTS 1/0 | ✅ 충족 | `minredis/mini_redis.py#cmd_exists` |
+| R2-12 | DBSIZE `(integer) N` | ✅ 충족 | `minredis/mini_redis.py#cmd_dbsize` |
+| R2-13 | 전체 키를 배열 형태로 출력 | ✅ 충족 | `minredis/cli.py#format_result` — `N) "key"` 형식 (명세 해설이 권장한 형식). 실행 출력 `1) "user:3"` / `2) "user:2"` |
+| R2-14 | 키 없으면 `(empty array)` 류 표현 | ✅ 충족 | `minredis/cli.py#format_result` — 정확히 `(empty array)`. 실행 확인 |
 
 #### R3. 메모리 관리 + LRU 자동 제거
 
 | ID | 요구사항 (요약) | 판정 | 근거 / 비고 |
 | --- | --- | --- | --- |
-| R3-1 | `bytes` 는 0 이상의 정수 | ✅ 충족 | `mini_redis.py:285-286` 음수 거부. 실행 검증: `CONFIG SET maxmemory -1` → `(error) ERR value is not an integer or out of range`, 기존 설정·데이터 불변 |
-| R3-2 | 0 = 무제한 | ✅ 충족 | `mini_redis.py:65` 주석, `:164` `if self._maxmemory <= 0: return` (축출 차단), `:203`·`:217` OOM 판정도 `> 0` 가드. 실행 검증: maxmemory 0 에서 48바이트 SET 성공, 축출 0 |
-| R3-3 | 성공 시 `OK`, 정수 파싱 실패 시 에러 표준 | ✅ 충족 | `main.py:206-210` → `mini_redis.py:291`. 실행 검증: `CONFIG SET maxmemory abc` → `(error) ERR value is not an integer or out of range` |
-| R3-4 | `used_memory`/`maxmemory`/`evicted_keys` 3줄 출력 | ✅ 충족 | `main.py:108-112` — 정확히 3줄. 실행 출력 `used_memory:22 / maxmemory:30 / evicted_keys:1` |
-| R3-5 | `used_memory = Σ(len(utf8(k)) + len(utf8(v)))` | ✅ 충족 | `mini_redis.py:74-85` — `len(s.encode('utf-8'))` 사용 (문자 수 아님). 실행 검증: `SET 안녕 하이` → `used_memory:12` (3+3+3+3) |
-| R3-6 | 노드/포인터/버킷 오버헤드 제외 | ✅ 충족 | `_entry_size`(`mini_redis.py:79-85`)가 key+value 만 더한다. `_used_memory` 갱신 지점은 `:99`, `:224` 두 곳뿐이며 둘 다 `_entry_size` 기준 |
-| R3-7 | maxmemory 이하가 될 때까지 LRU 부터 제거 | ✅ 충족 | `mini_redis.py:175-186` — `while used + additional > maxmemory and not lru.is_empty()` 루프로 **연쇄 축출** 가능. 희생자는 `self._lru.back()` (LRU 말단). 축출 직전 `:172` 에서 만료 키를 먼저 회수해 살아있는 키가 대신 희생되는 것을 막는다 (명세 함정 8번 대응) |
-| R3-8 | 제거 키를 `evicted_keys` 에 누적 | ✅ 충족 | `mini_redis.py:186` `self._evicted_keys += 1`. 만료 삭제 경로(`_hard_delete` 단독)는 카운트하지 않으므로 오염 없음. 실행 검증: 만료 키가 낀 축출 시나리오에서 `evicted_keys:0` 유지 |
-| R3-9 | 단일 엔트리 > maxmemory → 저장 안 하고 OOM | ✅ 충족 | `mini_redis.py:203-204` — **기존 키 삭제·축출보다 먼저** 검사하고 즉시 반환하므로 원자성이 지켜진다. 실행 검증: maxmemory 10, `k1="v2"` 상태에서 `SET k1 waytoolongvalueforthelimit` → OOM 출력 + `GET k1`=`"v2"` + `TTL k1`=`-1` + `evicted_keys:0` (기존 값·TTL·카운터 전부 보존) |
+| R3-1 | `bytes` 는 0 이상의 정수 | ✅ 충족 | `minredis/mini_redis.py#cmd_config_set_maxmemory` 음수 거부. 실행 검증: `CONFIG SET maxmemory -1` → `(error) ERR value is not an integer or out of range`, 기존 설정·데이터 불변 |
+| R3-2 | 0 = 무제한 | ✅ 충족 | `minredis/mini_redis.py#MiniRedis.__init__` 주석, `minredis/mini_redis.py#_evict_to_fit` `if self._maxmemory <= 0: return` (축출 차단), `minredis/mini_redis.py#cmd_set` OOM 판정도 `> 0` 가드. 실행 검증: maxmemory 0 에서 48바이트 SET 성공, 축출 0 |
+| R3-3 | 성공 시 `OK`, 정수 파싱 실패 시 에러 표준 | ✅ 충족 | `minredis/cli.py#dispatch` → `minredis/mini_redis.py#cmd_config_set_maxmemory`. 실행 검증: `CONFIG SET maxmemory abc` → `(error) ERR value is not an integer or out of range` |
+| R3-4 | `used_memory`/`maxmemory`/`evicted_keys` 3줄 출력 | ✅ 충족 | `minredis/cli.py#format_result` — 정확히 3줄. 실행 출력 `used_memory:22 / maxmemory:30 / evicted_keys:1` |
+| R3-5 | `used_memory = Σ(len(utf8(k)) + len(utf8(v)))` | ✅ 충족 | `minredis/mini_redis.py#_entry_size` — `len(s.encode('utf-8'))` 사용 (문자 수 아님). 실행 검증: `SET 안녕 하이` → `used_memory:12` (3+3+3+3) |
+| R3-6 | 노드/포인터/버킷 오버헤드 제외 | ✅ 충족 | `_entry_size`(`minredis/mini_redis.py#_entry_size`)가 key+value 만 더한다. `_used_memory` 갱신 지점은 `minredis/mini_redis.py#_hard_delete`, `minredis/mini_redis.py#cmd_set` 두 곳뿐이며 둘 다 `_entry_size` 기준 |
+| R3-7 | maxmemory 이하가 될 때까지 LRU 부터 제거 | ✅ 충족 | `minredis/mini_redis.py#_evict_to_fit` — `while used + additional > maxmemory and not lru.is_empty()` 루프로 **연쇄 축출** 가능. 희생자는 `self._lru.back()` (LRU 말단). 축출 직전 `minredis/mini_redis.py#_evict_to_fit` 에서 만료 키를 먼저 회수해 살아있는 키가 대신 희생되는 것을 막는다 (명세 함정 8번 대응) |
+| R3-8 | 제거 키를 `evicted_keys` 에 누적 | ✅ 충족 | `minredis/mini_redis.py#_evict_to_fit` `self._evicted_keys += 1`. 만료 삭제 경로(`_hard_delete` 단독)는 카운트하지 않으므로 오염 없음. 실행 검증: 만료 키가 낀 축출 시나리오에서 `evicted_keys:0` 유지 |
+| R3-9 | 단일 엔트리 > maxmemory → 저장 안 하고 OOM | ✅ 충족 | `minredis/mini_redis.py#cmd_set` — **기존 키 삭제·축출보다 먼저** 검사하고 즉시 반환하므로 원자성이 지켜진다. 실행 검증: maxmemory 10, `k1="v2"` 상태에서 `SET k1 waytoolongvalueforthelimit` → OOM 출력 + `GET k1`=`"v2"` + `TTL k1`=`-1` + `evicted_keys:0` (기존 값·TTL·카운터 전부 보존) |
 
 #### R4. TTL 관리 (힙 기반)
 
 | ID | 요구사항 (요약) | 판정 | 근거 / 비고 |
 | --- | --- | --- | --- |
-| R4-1 | 없는 키 EXPIRE → `(integer) 0` | ✅ 충족 | `mini_redis.py:307-309`. 실행 확인 |
-| R4-2 | seconds ≤ 0 → 즉시 만료, 존재하면 삭제 후 `(integer) 1` | ✅ 충족 | `mini_redis.py:310-313`. 실행 검증: `EXPIRE k2 0` → `(integer) 1`, 직후 `EXISTS k2` → `(integer) 0` |
-| R4-3 | 정상 설정 시 `(integer) 1` | ✅ 충족 | `mini_redis.py:324`. 실행 확인 |
-| R4-4 | 없는 키 TTL → `(integer) -2` | ✅ 충족 | `mini_redis.py:333-335`. 실행 확인 |
-| R4-5 | 키는 있고 만료 없음 → `(integer) -1` | ✅ 충족 | `mini_redis.py:336-337`. 실행 확인 (`TTL user:3` → `-1`) |
-| R4-6 | 남은 초를 `(integer) N` | ✅ 충족 | `mini_redis.py:338-341` — 내림(floor). 실행 검증 `EXPIRE user:2 3` 직후 `TTL user:2` → `(integer) 2` (명세 예시와 동일, 체크리스트는 2·3 모두 인정) |
-| R4-7 | 만료 키는 GET 시 먼저 삭제 후 `(nil)`, LRU 갱신 없음 | ✅ 충족 | `mini_redis.py:105-108` (삭제) → `:234-236` (`(nil)` 반환, `move_to_front` 미도달) |
+| R4-1 | 없는 키 EXPIRE → `(integer) 0` | ✅ 충족 | `minredis/mini_redis.py#cmd_expire`. 실행 확인 |
+| R4-2 | seconds ≤ 0 → 즉시 만료, 존재하면 삭제 후 `(integer) 1` | ✅ 충족 | `minredis/mini_redis.py#cmd_expire`. 실행 검증: `EXPIRE k2 0` → `(integer) 1`, 직후 `EXISTS k2` → `(integer) 0` |
+| R4-3 | 정상 설정 시 `(integer) 1` | ✅ 충족 | `minredis/mini_redis.py#cmd_expire`. 실행 확인 |
+| R4-4 | 없는 키 TTL → `(integer) -2` | ✅ 충족 | `minredis/mini_redis.py#cmd_ttl`. 실행 확인 |
+| R4-5 | 키는 있고 만료 없음 → `(integer) -1` | ✅ 충족 | `minredis/mini_redis.py#cmd_ttl`. 실행 확인 (`TTL user:3` → `-1`) |
+| R4-6 | 남은 초를 `(integer) N` | ✅ 충족 | `minredis/mini_redis.py#cmd_ttl` — 내림(floor). 실행 검증 `EXPIRE user:2 3` 직후 `TTL user:2` → `(integer) 2` (명세 예시와 동일, 체크리스트는 2·3 모두 인정) |
+| R4-7 | 만료 키는 GET 시 먼저 삭제 후 `(nil)`, LRU 갱신 없음 | ✅ 충족 | `minredis/mini_redis.py#_get_live_entry` (삭제) → `minredis/mini_redis.py#cmd_get` (`(nil)` 반환, `move_to_front` 미도달) |
 | R4-8 | SET 덮어쓰기 시 TTL 초기화 | ✅ 충족 | R2-5 와 동일 근거. 실행으로 `-1` 확인 |
 | R4-9 | 없는 키 EXPIRE → `(integer) 0` | ✅ 충족 | R4-1 과 동일. 실행 검증 `EXPIRE nosuchkey 10` → `(integer) 0` |
-| R4-10 | DEL 은 데이터/TTL/LRU 모두에서 제거 | ✅ 충족 | `mini_redis.py:91-99` + `:247-251`. 힙은 lazy deletion 이지만 **관측되는 상태는 완전 제거와 동일**함을 실행으로 확인 (store 0, lru 0, used 0, TTL -2). R4-11 이 이 전략을 명시적으로 허용 |
-| R4-11 | 힙으로 가장 빠른 만료를 빠르게 찾을 것 | ✅ 충족 | `mini_redis.py:111-132` `_purge_expired_via_heap` 이 `peek()` 로 최소 만료를 O(1) 확인하고 미래면 즉시 break(`:123-124`). **힙이 장식이 아님을 뮤테이션으로 실증**: `MinHeap.push` 를 no-op 으로 바꾼 사본에서 **테스트 11개 실패** (아래 🧪 절). 추가로 `:134-155` 컴팩션이 stale 무한 누적을 유계화 |
+| R4-10 | DEL 은 데이터/TTL/LRU 모두에서 제거 | ✅ 충족 | `minredis/mini_redis.py#_hard_delete` + `minredis/mini_redis.py#cmd_del`. 힙은 lazy deletion 이지만 **관측되는 상태는 완전 제거와 동일**함을 실행으로 확인 (store 0, lru 0, used 0, TTL -2). R4-11 이 이 전략을 명시적으로 허용 |
+| R4-11 | 힙으로 가장 빠른 만료를 빠르게 찾을 것 | ✅ 충족 | `minredis/mini_redis.py#_purge_expired_via_heap` 이 `peek()` 로 최소 만료를 O(1) 확인하고 미래면 즉시 break(`minredis/mini_redis.py#_purge_expired_via_heap`). **힙이 장식이 아님을 뮤테이션으로 실증**: `MinHeap.push` 를 no-op 으로 바꾼 사본에서 **테스트 11개 실패** (아래 🧪 절). 추가로 `minredis/mini_redis.py#_maybe_compact_ttl_heap` 컴팩션이 stale 무한 누적을 유계화 |
 
 #### R5. 에러 처리 표준 + CLI
 
 | ID | 요구사항 (요약) | 판정 | 근거 / 비고 |
 | --- | --- | --- | --- |
-| R5-1 | `mini-redis> ` 프롬프트 | ✅ 충족 | `main.py:240` 기본 인자 `prompt='mini-redis> '` (끝 공백 포함). `tests/test_cli.py:252-270` 이 문자열을 리터럴로 고정. 실행 출력에서 확인 |
-| R5-2 | 입력 읽고 파싱·실행 | ✅ 충족 | `main.py:245-285` REPL 루프 + `:25-82` 토크나이저 + `:149-235` 디스패처. `:275-284` 최상위 예외 가드로 어떤 입력에도 프로세스가 죽지 않는다 |
-| R5-3 | `exit`/`quit` 종료 | ✅ 충족 | `main.py:160-161` (대소문자 무관). EOF(`:248-250`)·Ctrl+C(`:251-254`)도 처리. 실행 확인 |
-| R5-4 | `(error) ERR unknown command '<cmd>'` | ✅ 충족 | `main.py:235`. 실행 출력 `(error) ERR unknown command 'HELLO'` — 명세 예시와 바이트 단위 일치 |
-| R5-5 | `(error) ERR wrong number of arguments for '<cmd>' command` | ✅ 충족 | `main.py:118-119` — 꼬리 ` command` 포함. 실행 출력 `(error) ERR wrong number of arguments for 'GET' command` 일치 |
-| R5-6 | `(error) ERR value is not an integer or out of range` | ✅ 충족 | `mini_redis.py:37` 상수 단일 정의, `main.py:209,227` 에서 사용. `_parse_int`(`main.py:130-146`)가 `1_000`·`" 12 "`·`1e3`·유니코드 숫자·int64 범위 초과를 전부 거부. 실행 확인 |
-| R5-7 | `(error) OOM command not allowed when used_memory > 'maxmemory'` | ✅ 충족 | `mini_redis.py:38` — **`ERR` 가 아니라 `OOM` 으로 시작**, `'maxmemory'` 작은따옴표까지 정확. 실행 출력 일치 |
-| R5-8 | `"Alice"` 같은 따옴표 입력 허용 | ✅ 충족 | `main.py:40-69` — 큰따옴표 묶음 + `\"`/`\\`/`\n`/`\t` 이스케이프. 실행 검증: `SET k "hello world"` → `GET k` → `"hello world"` (공백 보존). 따옴표는 파싱에서 벗겨져 `used_memory` 에 포함되지 않음 (`"Bob"`→3바이트, 실행 `used_memory:22` 로 확인) |
-| R5-9 | 공백 없는 값 / 큰따옴표 값 중 하나 지원 | ✅ 충족 | `main.py:70-81`(공백 없는 값) + `:40-69`(따옴표) — **둘 다** 지원 |
+| R5-1 | `mini-redis> ` 프롬프트 | ✅ 충족 | `minredis/cli.py#repl` 기본 인자 `prompt='mini-redis> '` (끝 공백 포함). `tests/test_cli.py#test_prompt_string_is_exactly_mini_redis` 이 문자열을 리터럴로 고정. 실행 출력에서 확인 |
+| R5-2 | 입력 읽고 파싱·실행 | ✅ 충족 | `minredis/cli.py#repl` REPL 루프 + `minredis/cli.py#tokenize` 토크나이저 + `minredis/cli.py#dispatch` 디스패처. `minredis/cli.py#repl` 최상위 예외 가드로 어떤 입력에도 프로세스가 죽지 않는다 |
+| R5-3 | `exit`/`quit` 종료 | ✅ 충족 | `minredis/cli.py#dispatch` (대소문자 무관). EOF(`minredis/cli.py#repl`)·Ctrl+C(`minredis/cli.py#repl`)도 처리. 실행 확인 |
+| R5-4 | `(error) ERR unknown command '<cmd>'` | ✅ 충족 | `minredis/cli.py#dispatch`. 실행 출력 `(error) ERR unknown command 'HELLO'` — 명세 예시와 바이트 단위 일치 |
+| R5-5 | `(error) ERR wrong number of arguments for '<cmd>' command` | ✅ 충족 | `minredis/cli.py#_wrong_args` — 꼬리 ` command` 포함. 실행 출력 `(error) ERR wrong number of arguments for 'GET' command` 일치 |
+| R5-6 | `(error) ERR value is not an integer or out of range` | ✅ 충족 | `minredis/mini_redis.py#ERR_NOT_INTEGER` 상수 단일 정의, `minredis/cli.py#dispatch` 에서 사용. `_parse_int`(`minredis/cli.py#_parse_int`)가 `1_000`·`" 12 "`·`1e3`·유니코드 숫자·int64 범위 초과를 전부 거부. 실행 확인 |
+| R5-7 | `(error) OOM command not allowed when used_memory > 'maxmemory'` | ✅ 충족 | `minredis/mini_redis.py#ERR_OOM` — **`ERR` 가 아니라 `OOM` 으로 시작**, `'maxmemory'` 작은따옴표까지 정확. 실행 출력 일치 |
+| R5-8 | `"Alice"` 같은 따옴표 입력 허용 | ✅ 충족 | `minredis/cli.py#tokenize` — 큰따옴표 묶음 + `\"`/`\\`/`\n`/`\t` 이스케이프. 실행 검증: `SET k "hello world"` → `GET k` → `"hello world"` (공백 보존). 따옴표는 파싱에서 벗겨져 `used_memory` 에 포함되지 않음 (`"Bob"`→3바이트, 실행 `used_memory:22` 로 확인) |
+| R5-9 | 공백 없는 값 / 큰따옴표 값 중 하나 지원 | ✅ 충족 | `minredis/cli.py#tokenize`(공백 없는 값) + `minredis/cli.py#tokenize`(따옴표) — **둘 다** 지원 |
 
 #### 보너스 과제
 
 | ID | 요구사항 (요약) | 판정 | 근거 / 비고 |
 | --- | --- | --- | --- |
-| B1 | 동적 배열 직접 구현 (`append`/`get`/`set`/`remove` + capacity 2배 확장) | ❌ 미충족 | 저장소 전체에 동적 배열 클래스 없음 (`DynamicArray`/`dynamic_array` grep 0건). 힙 백업 저장소는 파이썬 `list` 의 `append`/`pop` 에 의존한다 (`heap.py:22,37,48`) — B1 이 겨냥한 바로 그 지점이 미대체 상태 |
+| B1 | 동적 배열 직접 구현 (`append`/`get`/`set`/`remove` + capacity 2배 확장) | ❌ 미충족 | 저장소 전체에 동적 배열 클래스 없음 (`DynamicArray`/`dynamic_array` grep 0건). 힙 백업 저장소는 파이썬 `list` 의 `append`/`pop` 에 의존한다 (`minredis/heap.py#__init__,push,pop`) — B1 이 겨냥한 바로 그 지점이 미대체 상태 |
 | B2 | `STACK_QUEUE_DEQUE.md` 작성 | ❌ 미충족 | 파일 없음 (`ls -a` 로 확인, 저장소 내 `.md` 는 `README.md` 하나). README 에도 스택/큐/덱 서술 없음 |
-| B3 | 이진 트리 + 전위/중위/후위/레벨 순회 | ❌ 미충족 | 트리 클래스·순회 함수 없음. `heap.py:3` 의 "완전 이진 트리" 는 서술 한 줄일 뿐 구현이 아니다 |
+| B3 | 이진 트리 + 전위/중위/후위/레벨 순회 | ❌ 미충족 | 트리 클래스·순회 함수 없음. `minredis/heap.py` 의 "완전 이진 트리" 는 서술 한 줄일 뿐 구현이 아니다 |
 | B4 | BST 삽입/탐색/삭제 + 중위 순회 정렬 | ❌ 미충족 | grep 0건 |
-| B5 | `PUBLISH`/`SUBSCRIBE` 채널 메시징 | ❌ 미충족 | `main.py:163-235` 디스패처에 해당 명령 없음. `PUBLISH`/`SUBSCRIBE` grep 0건 |
+| B5 | `PUBLISH`/`SUBSCRIBE` 채널 메시징 | ❌ 미충족 | `minredis/cli.py#dispatch` 디스패처에 해당 명령 없음. `PUBLISH`/`SUBSCRIBE` grep 0건 |
 
 #### 🔍 발견된 격차와 보완 제안
 
@@ -573,19 +578,17 @@ mini-redis> HELLO
 아래는 남은 격차다.
 
 1. **보너스 5개 전부 미구현 (B1~B5) — 선택 항목이므로 감점 사유는 아니다.**
-   - 가장 저렴한 것은 **B2** 다. `STACK_QUEUE_DEQUE.md` 한 파일이면 되고, 저장소에 이미 재료가 있다 — TTL 힙이 우선순위 큐, `DoublyLinkedList` 가 덱의 완전한 구현체(`insert_front`/`insert_back`/`remove_front`/`remove_back` 4연산이 곧 덱 API)다. "이 저장소의 어떤 코드가 스택/큐/덱으로 이미 동작하는가" 를 파일:라인으로 짚으면 문서가 채워진다.
-   - **B1** 은 `heap.py:22` 의 `list` 를 `DynamicArray` 로 갈아끼우면 끝난다. `append`/`get`/`set`/`remove` + capacity 2배 확장을 만들고 `MinHeap._data` 를 교체하면, 힙 테스트 `tests/test_heap.py` 가 그대로 회귀 검증이 된다. 덤으로 `hashmap.py:169` 의 `[None] * capacity` 도 같은 클래스로 통일할 수 있어 "내장 자료형 의존"이 한 단계 더 걷힌다.
+   - 가장 저렴한 것은 **B2** 다. `STACK_QUEUE_DEQUE.md` 한 파일이면 되고, 저장소에 이미 재료가 있다 — TTL 힙이 우선순위 큐, `DoublyLinkedList` 가 덱의 완전한 구현체(`insert_front`/`insert_back`/`remove_front`/`remove_back` 4연산이 곧 덱 API)다. "이 저장소의 어떤 코드가 스택/큐/덱으로 이미 동작하는가" 를 `파일#심볼` 로 짚으면 문서가 채워진다(0.10 머리말의 좌표 표기 규칙과 같다 — 줄번호는 코드를 옮기는 순간 거짓이 된다).
+   - **B1** 은 `minredis/heap.py#__init__` 의 `list` 를 `DynamicArray` 로 갈아끼우면 끝난다. `append`/`get`/`set`/`remove` + capacity 2배 확장을 만들고 `MinHeap._data` 를 교체하면, 힙 테스트 `tests/test_heap.py` 가 그대로 회귀 검증이 된다. 덤으로 `minredis/hashmap.py#_make_buckets` 의 `[None] * capacity` 도 같은 클래스로 통일할 수 있어 "내장 자료형 의존"이 한 단계 더 걷힌다.
    - **B3/B4** 는 독립 모듈(`binary_tree.py`, `bst.py`) 추가. 힙이 "완전 이진 트리의 배열 표현"이라는 관점과 대조하면 학습 효과가 크다.
    - **B5** 는 `HashMap<channel → DoublyLinkedList>` 로 구독자 버퍼를 만들면 되고, 연결 리스트를 메시지 큐로 재활용하라는 명세 의도와 정확히 맞는다.
 
-2. **README 에 과제 명세(0절)가 아직 없다 — 경미.**
-   `README.md` 는 `# Mini Redis` 로 바로 시작하고, 요구사항 원문·학습 지도·제약 사항이 들어 있지 않다. 구현 설명·설계 근거·체크포인트는 대단히 충실하지만, "이 과제가 무엇을 요구했는가" 를 README 만 보고는 역추적할 수 없다. 추출된 명세 문서를 README 최상단에 `## 0. 과제 명세` 로 붙이면 해결된다.
+2. ~~**README 에 과제 명세(0절)가 아직 없다.**~~ — ✅ 해소. 이 문서 맨 앞의 `## 0. 과제 명세` 가 그것이다.
 
-3. **README 의 뮤테이션 수치가 실측과 어긋난다 — 경미.**
-   `README.md` 의 "특히 `MinHeap.push` 를 no-op 으로 바꾸면 **9개** 테스트가 실패한다" 는 서술에 대해, 실제로 사본에서 `push` 를 no-op 으로 만들어 돌린 결과는 **11개 실패**였다. 주장보다 강한 방향의 오차라 결론(힙이 실동작 경로에 있다)은 그대로 성립하지만, 문서에 박아 둔 실측치는 재측정해 갱신하는 편이 낫다.
+3. ~~**README 의 뮤테이션 수치가 실측과 어긋난다.**~~ — ✅ 해소. 재측정해 **11개**로 갱신했다 (아래 🧪 9번).
 
 4. **참고(결함 아님) — `_evict_to_fit` 의 무제한 모드 조기 반환.**
-   `mini_redis.py:164` 가 `maxmemory <= 0` 일 때 만료 회수 없이 반환하므로, 무제한 모드에서는 `SET` 이 만료 키를 회수하지 않는다. 다만 `DBSIZE`/`KEYS`/`INFO memory` 가 `_purge_expired_via_heap()` 을 먼저 부르고(`:265,274,298`) 힙 상한은 `cmd_expire` 의 컴팩션(`:323`)이 지키므로 **외부에서 관측되는 출력은 명세와 어긋나지 않는다.** 꼬리 지연을 막기 위한 의도된 트레이드오프이며 README 에 근거와 실측(만료 키 5만 개 기준 1.5초)까지 명시되어 있다. 정공법은 active expire cycle 이고 README 가 이미 그 경로를 적어 두었다.
+   `minredis/mini_redis.py#_evict_to_fit` 가 `maxmemory <= 0` 일 때 만료 회수 없이 반환하므로, 무제한 모드에서는 `SET` 이 만료 키를 회수하지 않는다. 다만 `DBSIZE`/`KEYS`/`INFO memory` 가 `_purge_expired_via_heap()` 을 먼저 부르고(`minredis/mini_redis.py#cmd_dbsize,cmd_keys,cmd_info_memory`) 힙 상한은 `cmd_expire` 의 컴팩션(`minredis/mini_redis.py#cmd_expire`)이 지키므로 **외부에서 관측되는 출력은 명세와 어긋나지 않는다.** 꼬리 지연을 막기 위한 의도된 트레이드오프이며 README 에 근거와 실측(만료 키 5만 개 기준 1.5초)까지 명시되어 있다. 정공법은 active expire cycle 이고 README 가 이미 그 경로를 적어 두었다.
 
 #### 🧪 실행 검증 기록
 
@@ -593,20 +596,20 @@ mini-redis> HELLO
 
 **1) 컴파일 — 통과**
 ```
-$ python3 -m py_compile main.py mini_redis.py hashmap.py heap.py linked_list.py tests/*.py
-COMPILE OK      (python3 3.14.4)
+$ python3 -m py_compile main.py minredis/*.py tests/*.py
+COMPILE OK      (Python 3.14.4)
 ```
 
-**2) 테스트 스위트 — 105개 전부 통과**
+**2) 테스트 스위트 — 117개 전부 통과**
 ```
 $ python3 -m unittest discover -s tests -t .
-Ran 105 tests in 0.353s
+Ran 117 tests in 0.558s
 OK
 ```
-표준 라이브러리(`unittest`)만 사용하며 외부 의존성 없음. `FakeClock` 주입(`tests/helpers.py:15-30`)으로 TTL 테스트가 `sleep` 없이 결정적으로 돈다.
+표준 라이브러리(`unittest`)만 사용하며 외부 의존성 없음. `FakeClock` 주입(`tests/helpers.py#FakeClock.advance`)으로 TTL 테스트가 `sleep` 없이 결정적으로 돈다.
 
 **3) 금지 자료형 AST 검사 — 위반 0건 (독립 스크립트로 재확인)**
-저장소의 자체 검사(`tests/test_cli.py:286-323`)를 신뢰하지 않고, 별도 스크립트로 전 `.py` 파일을 AST 파싱해 `Name`/`Attribute`/`Dict`/`Set`/`DictComp`/`SetComp`/`collections` import 를 검사했다.
+저장소의 자체 검사(`tests/test_cli.py#test_no_banned_builtins_anywhere`)를 신뢰하지 않고, 별도 스크립트로 전 `.py` 파일을 AST 파싱해 `Name`/`Attribute`/`Dict`/`Set`/`DictComp`/`SetComp`/`collections` import 를 검사했다.
 ```
 TOTAL BANNED HITS: 0
 ```
@@ -655,9 +658,9 @@ fuzz OK: used_memory / LRU-store 일치 / maxmemory 상한 전부 성립
 **9) 뮤테이션 검증 — 힙이 실동작 경로에 있음 (명세 함정 12번)**
 저장소를 건드리지 않기 위해 scratchpad 사본에서 `MinHeap.push` 를 no-op 으로 치환 후 테스트 실행:
 ```
-Ran 105 tests ... FAILED (failures=11)
+Ran 117 tests ... FAILED (failures=11)
 ```
-힙을 무력화하면 11개 테스트가 깨진다 = **힙이 장식이 아니라 TTL 동작 경로에 실제로 놓여 있다.** (README 는 9개라고 적어 두었으나 실측은 11개)
+힙을 무력화하면 11개 테스트가 깨진다 = **힙이 장식이 아니라 TTL 동작 경로에 실제로 놓여 있다.**
 
 **10) 추가 엣지 입력 — REPL 무사망 확인**
 빈 줄 / 공백만 / 닫히지 않은 따옴표(`SET k "abc`) / `EXPIRE k 1e3` / `EXPIRE k 10^400` / `KEYS *` / `DBSIZE x` / `INFO cpu` / `CONFIG GET maxmemory` / 빈 문자열 키(`SET "" v`) / 빈 문자열 값 / EOF — 전부 에러 메시지 출력 후 프롬프트로 복귀하거나 정상 종료. traceback 0건.
@@ -678,6 +681,9 @@ Ran 105 tests ... FAILED (failures=11)
 python main.py
 ```
 
+루트의 `main.py` 는 `minredis.cli.repl()` 을 부르는 shim 이다. 구현은 전부
+`minredis/` 패키지 안에 있고, 진입점 경로만 바깥에 남겨 두었다.
+
 ```text
 mini-redis> SET user:1 "Alice"
 OK
@@ -693,23 +699,37 @@ python -m unittest discover -s tests -t . -v
 ```
 
 시계를 주입(`MiniRedis(now_fn=...)`)하기 때문에 TTL 테스트도 `sleep` 없이
-결정적으로 돌아간다. 전체 105개 테스트가 0.5초 안에 끝난다.
-`tests/test_cli.py`의 `TestConstraints`가 AST로 전 파일을 훑어
-`dict`/`set`/`collections` 사용과 3.9+ 문법을 스스로 검사하므로,
-과제 제약 위반은 테스트 실패로 바로 드러난다.
+결정적으로 돌아간다. 전체 117개 테스트가 0.6초 안에 끝난다.
+
+규칙을 문서가 아니라 검사가 들고 있다:
+
+- `tests/test_cli.py`의 `TestConstraints` — AST로 전 파일을 훑어
+  `dict`/`set`/`collections` 사용과 3.9+ 문법을 차단한다. 몇 개 파일을 봤는지까지
+  단언하므로 "아무것도 못 찾아서 통과"할 수 없다.
+- `tests/test_cli.py`의 `TestCommandTableArity` — 인자 개수 검사를 명령 테이블에서
+  **생성**한다. 표에 명령을 추가하면 검사가 저절로 따라붙는다.
+- `tests/test_mini_redis.py`의 `TestSingleClockRead` — 흐르는 시계(`DriftingClock`)로
+  "한 명령은 시계를 한 번만 읽는다"를 강제한다.
+- `tests/test_docs.py` — 이 README가 가리키는 `파일#심볼` 좌표가 실제로 존재하는지
+  확인한다. 코드를 옮기면 문서가 먼저 빨간불이 된다.
 
 ## 파일 구조
 
-| 파일                                 | 역할                                                          |
-| ------------------------------------ | ------------------------------------------------------------- |
-| [linked_list.py](linked_list.py)     | 이중 연결 리스트 (sentinel 기반, 모든 연산 O(1))              |
-| [hashmap.py](hashmap.py)             | 해시맵 (FNV-1a 해시 + 체이닝, 로드 팩터에 따른 2배 확장/축소) |
-| [heap.py](heap.py)                   | 최소 힙 (배열 기반, `_heapify_up` / `_heapify_down`)          |
-| [mini_redis.py](mini_redis.py)       | 세 자료구조를 조합한 Mini Redis 코어 엔진                     |
-| [main.py](main.py)                   | REPL 진입점, 토크나이저, 디스패처, 결과 포매터                |
-| [tests/](tests/)                     | 단위·회귀 테스트 (자료구조 3종 + 코어 + CLI)                  |
+| 파일 | 역할 |
+| --- | --- |
+| [main.py](main.py) | 실행 진입점 shim — `python main.py` 경로를 유지하기 위해서만 존재한다 |
+| [pyproject.toml](pyproject.toml) | 매니페스트. `requires-python = ">=3.8"`, 의존성 0 |
+| [minredis/\_\_init\_\_.py](minredis/__init__.py) | 패키지 공개 API — 코어(`MiniRedis`, `ResultKind`, 에러 상수)만 재노출한다 |
+| [minredis/linked_list.py](minredis/linked_list.py) | 이중 연결 리스트 (sentinel 기반, 모든 연산 O(1)) |
+| [minredis/hashmap.py](minredis/hashmap.py) | 해시맵 (FNV-1a 해시 + 체이닝, 로드 팩터에 따른 2배 확장/축소) |
+| [minredis/heap.py](minredis/heap.py) | 최소 힙 (배열 기반, `_heapify_up` / `_heapify_down`) |
+| [minredis/protocol.py](minredis/protocol.py) | 결과 튜플의 종류 태그(`ResultKind`) — 코어와 CLI 가 공유하는 유일한 정의 |
+| [minredis/mini_redis.py](minredis/mini_redis.py) | 세 자료구조를 조합한 Mini Redis 코어 엔진 |
+| [minredis/cli.py](minredis/cli.py) | REPL, 토크나이저, 명령 테이블, 결과 포매터 |
+| [tests/](tests/) | 단위·회귀 테스트 (자료구조 3종 + 코어 + CLI + 문서 좌표) |
 
-의존 방향은 단방향이다: `main → mini_redis → {hashmap → linked_list, heap, linked_list}`.
+의존 방향은 단방향이다: `cli → mini_redis → {hashmap → linked_list, heap, linked_list}`.
+`protocol` 은 잎 모듈이라 아무것도 import 하지 않고, `mini_redis` 와 `cli` 가 함께 참조한다.
 자료구조 모듈은 애플리케이션 로직을 import 하지 않는다.
 
 ## 지원 명령어
@@ -1001,8 +1021,9 @@ mini-redis> TTL user:2
 | [tests/test_linked_list.py](tests/test_linked_list.py) | 필수 메서드 6종, 경계(빈 리스트/단일 노드), 중복 제거·타 리스트 노드 방어, `move_to_front` 멱등성, 순회 중 삭제 |
 | [tests/test_hashmap.py](tests/test_hashmap.py) | 필수 메서드 6종, 확장 시점 고정(7/13/25/49), 축소 목표 용량 고정과 진동 방지, 강제 충돌 체이닝, 해시 분포, 유니코드 키 |
 | [tests/test_heap.py](tests/test_heap.py) | 필수 메서드 + `_heapify_up`/`_heapify_down`, 빈 힙, 500개 pop 순서 == `sorted()`, 혼합 연산 중 힙 불변식, `(expire_at, key)` 튜플 |
-| [tests/test_mini_redis.py](tests/test_mini_redis.py) | 명령 규약 전수, 명세 실행 예시 고정, `used_memory` 불변식 퍼징(3000스텝), TTL 반환 코드·만료 경계·내림 규칙, 힙 컴팩션 상한 3종, **만료/축출 회귀 6종** |
-| [tests/test_cli.py](tests/test_cli.py) | 토크나이저·이스케이프·따옴표 불균형, `_parse_int` 엄격성과 int64 경계, `format_result` 7종, 인자 개수 오류 전수, 프롬프트 문자열, REPL 최상위 가드, **AST 제약 검사** |
+| [tests/test_mini_redis.py](tests/test_mini_redis.py) | 명령 규약 전수, 명세 실행 예시 고정, `used_memory` 불변식 퍼징(3000스텝), TTL 반환 코드·만료 경계·내림 규칙, 힙 컴팩션 상한 3종, **만료/축출 회귀 6종**, **흐르는 시계로 '한 명령 = 시계 한 번' 강제** |
+| [tests/test_cli.py](tests/test_cli.py) | 토크나이저·이스케이프·따옴표 불균형, `_parse_int` 엄격성과 int64 경계, `format_result` 7종 + 모르는 종류의 예외, **명령 테이블에서 생성하는 인자 개수 검사**, 프롬프트 문자열, REPL 최상위 가드, **AST 제약 검사**·3.8 파싱 검사 |
+| [tests/test_docs.py](tests/test_docs.py) | README 가 가리키는 `파일#심볼` 좌표가 실제로 존재하는지 (문서가 코드를 따라오게 만드는 검사) |
 
 ### 회귀로 고정한 핵심 시나리오
 
@@ -1032,7 +1053,7 @@ mini-redis> TTL user:2
 컴팩션 임계 기준 변경 / `_maybe_shrink` 호출 삭제 / `move_to_front` 삭제 /
 `owner` 검사 무력화 / `MinHeap.push` no-op / `KEYS` arity 삭제 / 로드팩터 임계 변경.
 
-특히 `MinHeap.push`를 no-op으로 바꾸면 9개 테스트가 실패한다 — 힙이 장식이
+특히 `MinHeap.push`를 no-op으로 바꾸면 11개 테스트가 실패한다 — 힙이 장식이
 아니라 실제 동작 경로에 있음을 저장소가 스스로 증명한다(체크리스트 1-E절 요구).
 
 ## 설계 확장 노트
@@ -1044,7 +1065,7 @@ mini-redis> TTL user:2
 ### 1) LRU 대신 LFU를 구현한다면
 
 **빈도 카운트를 어디에 두나.** `_Entry`에 필드로 붙인다
-([mini_redis.py](mini_redis.py)의 `__slots__`에 `freq` 추가). 갱신 지점은 지금
+([minredis/mini_redis.py](minredis/mini_redis.py)의 `__slots__`에 `freq` 추가). 갱신 지점은 지금
 `move_to_front`를 부르는 자리와 정확히 같다 — `cmd_get`의 성공 경로 한 곳뿐이고,
 `SET`은 신규 삽입이므로 초기값을 준다.
 

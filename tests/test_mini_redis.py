@@ -6,9 +6,9 @@
 import random
 import unittest
 
-from tests.helpers import FakeClock
+from tests.helpers import DriftingClock, FakeClock
 
-from mini_redis import MiniRedis
+from minredis.mini_redis import MiniRedis
 
 
 class TestStringCommands(unittest.TestCase):
@@ -381,6 +381,72 @@ class TestExpiryEvictionRegression(unittest.TestCase):
         r.cmd_set('b', 'y' * 9)
         self.assertEqual(r.cmd_info_memory()[3], 1)
         self.assertEqual(r.cmd_get('a'), ('nil',))
+
+
+class TestSingleClockRead(unittest.TestCase):
+    """한 명령은 시계를 한 번만 읽는다 (mini_redis 모듈 docstring 의 불변식).
+
+    멈춘 FakeClock 아래에서는 시계를 두 번 읽어도 같은 값이 나와 버그가
+    보이지 않는다. 흐르는 시계로 바꿔야 드러난다.
+    """
+
+    # (이름, 인자) — 시계를 읽을 수 있는 모든 명령
+    COMMANDS = (
+        ('cmd_set', ('k', 'v')),
+        ('cmd_get', ('k',)),
+        ('cmd_del', ('k',)),
+        ('cmd_exists', ('k',)),
+        ('cmd_dbsize', ()),
+        ('cmd_keys', ()),
+        ('cmd_config_set_maxmemory', (100,)),
+        ('cmd_info_memory', ()),
+        ('cmd_expire', ('k', 10)),
+        ('cmd_ttl', ('k',)),
+    )
+
+    def test_every_command_reads_the_clock_at_most_once(self):
+        for name, args in self.COMMANDS:
+            with self.subTest(command=name):
+                clock = DriftingClock()
+                r = MiniRedis(now_fn=clock)
+                r.cmd_set('k', 'v')
+                # 키에 TTL을 걸어 둬야 만료 판정이 실제로 시계를 읽는다.
+                # TTL 없는 키는 expire_at is None 에서 단락되어 읽기가 안 생기고,
+                # 그러면 이 검사가 '두 번 읽기'를 놓친다.
+                r.cmd_expire('k', 3600)
+                clock.reads = 0
+                getattr(r, name)(*args)
+                self.assertLessEqual(
+                    clock.reads, 1,
+                    f'{name} 이 시계를 {clock.reads}번 읽었다 — '
+                    f'읽기 사이에 만료 경계가 지나갈 수 있다')
+
+    def test_ttl_does_not_report_missing_key_while_key_is_live(self):
+        """TTL 이 -2 를 돌려줬는데 키가 저장소에 남아 있으면 안 된다.
+
+        시계를 두 번 읽던 시절의 실제 버그: 첫 읽기에서는 살아 있어서
+        키가 삭제되지 않고, 둘째 읽기에서 만료 경계를 넘어 -2 가 나갔다.
+        """
+        clock = DriftingClock(step=0.25)
+        r = MiniRedis(now_fn=clock)
+        r.cmd_set('k', 'v')
+        r.cmd_expire('k', 10)
+        expire_at = r._store.get('k').expire_at
+        # 첫 읽기는 만료 직전, 둘째 읽기는 만료 직후가 되도록 맞춘다.
+        clock.t = expire_at - 0.1              # 0 < 0.1 < step
+        result = r.cmd_ttl('k')
+        self.assertEqual(result, ('int', 0),
+                         'TTL 이 살아 있는 키를 -2(키 없음)로 보고했다')
+
+    def test_expired_key_is_never_visible_to_dbsize_after_ttl_says_missing(self):
+        """TTL 이 -2 라고 답했다면 같은 키가 DBSIZE 에 잡혀서는 안 된다."""
+        clock = DriftingClock(step=0.25)
+        r = MiniRedis(now_fn=clock)
+        r.cmd_set('k', 'v')
+        r.cmd_expire('k', 10)
+        clock.t = r._store.get('k').expire_at + 1
+        self.assertEqual(r.cmd_ttl('k'), ('int', -2))
+        self.assertEqual(r.cmd_dbsize(), ('int', 0))
 
 
 if __name__ == '__main__':

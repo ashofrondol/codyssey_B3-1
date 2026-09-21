@@ -9,27 +9,33 @@
 Redis 스타일 문자열로 변환해 출력한다. 자료구조 계층과 출력 계층을
 분리해 두면 테스트하기도 쉽고 출력 형식이 바뀌어도 본체는 안 건드린다.
 
-반환 튜플 종류:
-    ('ok',)                      -> "OK"
-    ('nil',)                     -> "(nil)"
-    ('int', n)                   -> "(integer) n"
-    ('bulk', s)                  -> "\"s\""
-    ('array', [..])              -> 줄바꿈으로 구분된 목록
-    ('info', used, max, evict)   -> INFO memory 출력
-    ('error', msg)               -> "(error) msg"
+반환 튜플의 첫 원소(종류 태그)는 protocol.ResultKind 에 한 곳으로 정의돼 있다.
+튜플 모양과 출력 형식의 대응표도 거기 있다 — 같은 목록을 여기에 또 적으면
+둘은 언젠가 어긋난다.
 
 만료 키에 대한 불변식:
     만료 시각이 지난 키는 '접근 여부와 무관하게 논리적으로 존재하지 않는다'.
     DBSIZE / KEYS / used_memory / eviction 판정 어디에도 포함되지 않으며,
     만료로 사라진 키는 evicted_keys에 계상하지 않는다. 내부적으로는 lazy
     deletion을 쓰지만, 외부에서 관측되는 출력은 항상 이 규칙과 같아야 한다.
+
+'지금'에 대한 불변식:
+    하나의 명령은 시계(now_fn)를 정확히 한 번만 읽고, 그 값을 내부 헬퍼로
+    끝까지 넘긴다. 같은 명령 안에서 시계를 두 번 읽으면 두 읽기 사이에
+    만료 경계가 지나갈 수 있고, 그러면 위의 불변식이 깨진다 — 예를 들어
+    TTL이 '키 없음'(-2)을 반환했는데 같은 키가 저장소에는 그대로 남아
+    DBSIZE에 잡히는 상태가 만들어진다. 그래서 _is_expired/_get_live_entry/
+    _purge_expired_via_heap/_evict_to_fit 은 시계를 직접 읽지 않고
+    호출자가 정한 now를 인자로 받는다.
+    이 규칙은 tests/test_mini_redis.py 의 DriftingClock 검사가 강제한다.
 """
 
 import time
 
-from hashmap import HashMap
-from heap import MinHeap
-from linked_list import DoublyLinkedList
+from .hashmap import HashMap
+from .heap import MinHeap
+from .linked_list import DoublyLinkedList
+from .protocol import ResultKind
 
 
 # 사용자에게 보이는 에러 문구는 코어와 CLI가 함께 쓰므로 여기서 한 번만 정의한다.
@@ -84,9 +90,14 @@ class MiniRedis:
         """
         return self._utf8_len(key) + self._utf8_len(value)
 
-    def _is_expired(self, entry):
-        """엔트리의 만료 시각이 이미 지났으면 True."""
-        return entry.expire_at is not None and entry.expire_at <= self._now_fn()
+    @staticmethod
+    def _is_expired(entry, now):
+        """엔트리의 만료 시각이 now 기준으로 이미 지났으면 True.
+
+        now 를 인자로 받는 이유는 모듈 docstring 의 "'지금'에 대한 불변식"
+        참고. 여기서 시계를 직접 읽으면 호출자가 이미 읽은 값과 갈라진다.
+        """
+        return entry.expire_at is not None and entry.expire_at <= now
 
     def _hard_delete(self, key, entry):
         """저장소/LRU에서 엔트리를 제거하고 메모리 사용량을 보정한다.
@@ -98,18 +109,18 @@ class MiniRedis:
         self._store.remove(key)
         self._used_memory -= self._entry_size(key, entry.value)
 
-    def _get_live_entry(self, key):
-        """만료된 키는 그 자리에서 제거하고, 살아 있는 엔트리만 반환한다."""
+    def _get_live_entry(self, key, now):
+        """now 기준으로 만료된 키는 그 자리에서 제거하고, 살아 있는 엔트리만 반환한다."""
         entry = self._store.get(key)
         if entry is None:
             return None
-        if self._is_expired(entry):
+        if self._is_expired(entry, now):
             self._hard_delete(key, entry)
             return None
         return entry
 
-    def _purge_expired_via_heap(self):
-        """힙의 머리부터 만료된 항목을 정리(lazy deletion).
+    def _purge_expired_via_heap(self, now):
+        """힙의 머리부터 now 기준 만료 항목을 정리(lazy deletion).
 
         같은 키에 EXPIRE를 다시 걸면 힙에 새 항목이 추가되고 옛 항목은 남는다.
         그래서 pop 후에는 항상 '현재 엔트리의 expire_at과 일치하는지' 확인하여
@@ -117,7 +128,6 @@ class MiniRedis:
 
         만료 항목이 없으면 peek 1회로 즉시 빠져나오므로 호출 비용은 사실상 0이다.
         """
-        now = self._now_fn()
         while not self._ttl_heap.is_empty():
             expire_at, key = self._ttl_heap.peek()
             if expire_at > now:
@@ -154,7 +164,7 @@ class MiniRedis:
         self._ttl_heap_limit = max(self._TTL_HEAP_FLOOR,
                                    self._TTL_HEAP_SLACK * fresh.size())
 
-    def _evict_to_fit(self, additional_size):
+    def _evict_to_fit(self, additional_size, now):
         """maxmemory 제한 안에 들어갈 때까지 LRU(맨 뒤)부터 제거한다."""
         # 무제한 모드에서는 축출 자체가 없으므로 여기서 만료를 회수할 이유가 없다.
         # 가드보다 앞에 두면 무제한 SET 한 번이 '그동안 만료된 키 전부'를 회수하며
@@ -169,7 +179,7 @@ class MiniRedis:
         #   (3) 그 삭제가 evicted_keys에 잘못 집계된다.
         # 희생자를 고르기 전에 반드시 먼저 회수한다. 이 경로의 회수량은
         # maxmemory 안에 들어갈 수 있는 키 수로 자연히 상한이 잡힌다.
-        self._purge_expired_via_heap()
+        self._purge_expired_via_heap(now)
         # 여기 도달하는 희생자는 정의상 전부 '살아있는' 키이므로
         # evicted_keys 증가에 별도 분기가 필요 없다.
         while (self._used_memory + additional_size > self._maxmemory
@@ -195,34 +205,35 @@ class MiniRedis:
         단일 엔트리 자체가 maxmemory보다 크면 아무것도 바꾸지 않고 OOM을 반환한다.
         반환: ('ok',) | ('error', OOM)
         """
+        now = self._now_fn()
         new_size = self._entry_size(key, value)
 
         # 단일 엔트리 자체가 maxmemory보다 크면 저장하지 않고 OOM.
         # 이때 축출을 시도하지 않으므로 기존 키/값/TTL은 전부 그대로 살아남고
         # evicted_keys도 변하지 않는다.
         if self._maxmemory > 0 and new_size > self._maxmemory:
-            return ('error', ERR_OOM)
+            return (ResultKind.ERROR, ERR_OOM)
 
         # 기존 키가 있고 만료되지 않았다면 먼저 제거한다.
         # (덮어쓰기 시 기존 TTL 초기화 → 새 엔트리는 expire_at=None이므로 자연 만족)
-        existing = self._get_live_entry(key)
+        existing = self._get_live_entry(key, now)
         if existing is not None:
             self._hard_delete(key, existing)
 
         # 들어올 크기만큼 자리를 만든다(만료 회수 후 LRU 축출)
-        self._evict_to_fit(new_size)
+        self._evict_to_fit(new_size, now)
 
         # 안전망: 모두 비웠는데도 안 들어간다면 OOM (이 분기는 사실상
         # 첫 줄의 단일 엔트리 검사로 이미 걸러진다)
         if self._maxmemory > 0 and self._used_memory + new_size > self._maxmemory:
-            return ('error', ERR_OOM)
+            return (ResultKind.ERROR, ERR_OOM)
 
         # 신규/덮어쓰기와 무관하게 SET은 해당 키를 MRU로 만든다.
         lru_node = self._lru.insert_front(key)
         entry = _Entry(key, value, lru_node, expire_at=None)
         self._store.put(key, entry)
         self._used_memory += new_size
-        return ('ok',)
+        return (ResultKind.OK,)
 
     def cmd_get(self, key):
         """key의 값을 반환한다.
@@ -231,11 +242,11 @@ class MiniRedis:
         이 경로에서는 LRU를 갱신하지 않는다(명세 규정).
         반환: ('bulk', value) | ('nil',)
         """
-        entry = self._get_live_entry(key)
+        entry = self._get_live_entry(key, self._now_fn())
         if entry is None:
-            return ('nil',)
+            return (ResultKind.NIL,)
         self._lru.move_to_front(entry.lru_node)
-        return ('bulk', entry.value)
+        return (ResultKind.BULK, entry.value)
 
     def cmd_del(self, key):
         """key를 삭제한다. 데이터/LRU에서 즉시 제거되고 TTL은 무효화된다.
@@ -244,26 +255,26 @@ class MiniRedis:
         _maybe_compact_ttl_heap이 주기적으로 회수한다.)
         반환: ('int', 1) 삭제함 | ('int', 0) 없거나 이미 만료
         """
-        entry = self._get_live_entry(key)
+        entry = self._get_live_entry(key, self._now_fn())
         if entry is None:
-            return ('int', 0)
+            return (ResultKind.INT, 0)
         self._hard_delete(key, entry)
-        return ('int', 1)
+        return (ResultKind.INT, 1)
 
     def cmd_exists(self, key):
         """key의 존재 여부. 만료된 키는 삭제 후 '없음'으로 취급한다.
 
         반환: ('int', 1) | ('int', 0)
         """
-        return ('int', 1 if self._get_live_entry(key) is not None else 0)
+        return (ResultKind.INT, 1 if self._get_live_entry(key, self._now_fn()) is not None else 0)
 
     def cmd_dbsize(self):
         """저장된 키 개수. 만료 키를 먼저 회수하므로 항상 '살아있는' 수다.
 
         반환: ('int', n)
         """
-        self._purge_expired_via_heap()
-        return ('int', self._store.size())
+        self._purge_expired_via_heap(self._now_fn())
+        return (ResultKind.INT, self._store.size())
 
     def cmd_keys(self):
         """전체 키 목록. 만료 키를 먼저 회수한다.
@@ -271,8 +282,8 @@ class MiniRedis:
         순서는 해시 버킷 순회 순서라 삽입 순서도 정렬 순서도 아니다.
         반환: ('array', [key, ...])
         """
-        self._purge_expired_via_heap()
-        return ('array', self._store.keys())
+        self._purge_expired_via_heap(self._now_fn())
+        return (ResultKind.ARRAY, self._store.keys())
 
     def cmd_config_set_maxmemory(self, bytes_value):
         """maxmemory를 설정한다. 0은 무제한.
@@ -283,20 +294,20 @@ class MiniRedis:
         반환: ('ok',) | ('error', ...)
         """
         if bytes_value < 0:
-            return ('error', ERR_NOT_INTEGER)
+            return (ResultKind.ERROR, ERR_NOT_INTEGER)
         self._maxmemory = bytes_value
         # 새 제한이 현재 사용량보다 작으면 즉시 만료 회수 + LRU 축출을 수행한다.
         if self._maxmemory > 0:
-            self._evict_to_fit(0)
-        return ('ok',)
+            self._evict_to_fit(0, self._now_fn())
+        return (ResultKind.OK,)
 
     def cmd_info_memory(self):
         """메모리 통계. 만료 키를 먼저 회수하므로 used_memory는 살아있는 합이다.
 
         반환: ('info', used_memory, maxmemory, evicted_keys)
         """
-        self._purge_expired_via_heap()
-        return ('info', self._used_memory, self._maxmemory, self._evicted_keys)
+        self._purge_expired_via_heap(self._now_fn())
+        return (ResultKind.INFO, self._used_memory, self._maxmemory, self._evicted_keys)
 
     def cmd_expire(self, key, seconds):
         """key에 만료 시간(초)을 건다.
@@ -304,14 +315,15 @@ class MiniRedis:
         seconds가 0 이하면 즉시 만료로 처리해 그 자리에서 삭제한다.
         반환: ('int', 1) 설정/즉시만료 | ('int', 0) 키 없음
         """
-        entry = self._get_live_entry(key)
+        now = self._now_fn()
+        entry = self._get_live_entry(key, now)
         if entry is None:
-            return ('int', 0)
+            return (ResultKind.INT, 0)
         if seconds <= 0:
             # 즉시 만료: 존재하던 키를 삭제하고 1 반환
             self._hard_delete(key, entry)
-            return ('int', 1)
-        expire_at = self._now_fn() + seconds
+            return (ResultKind.INT, 1)
+        expire_at = now + seconds
         entry.expire_at = expire_at
         # 옛 항목을 찾아 지우면 O(n)이므로 무조건 push하고, 회수 시점에
         # expire_at 일치 검사로 stale을 걸러낸다.
@@ -321,21 +333,24 @@ class MiniRedis:
         # "GET 후 EXPIRE로 세션 연장" 같은 워크로드에서 stale이 무한 누적된다.
         # 임계 이하이면 size() 비교 한 번으로 끝나므로 O(1)이다.
         self._maybe_compact_ttl_heap()
-        return ('int', 1)
+        return (ResultKind.INT, 1)
 
     def cmd_ttl(self, key):
         """key의 남은 만료 시간(초).
 
         남은 시간은 내림(floor)한다. 따라서 EXPIRE 직후 값을 조회하면
         경과 시간만큼 줄어든 값이 나온다(예: EXPIRE k 3 -> 2).
+
+        생존 판정과 잔여 시간 계산이 같은 now 를 쓴다. 둘이 시계를 따로
+        읽으면 그 사이에 만료 경계가 지나가 '-2(키 없음)를 반환했는데 키는
+        저장소에 남아 DBSIZE에 잡히는' 상태가 만들어진다.
         반환: ('int', n) 남은 초 | ('int', -1) TTL 없음 | ('int', -2) 키 없음
         """
-        entry = self._get_live_entry(key)
+        now = self._now_fn()
+        entry = self._get_live_entry(key, now)
         if entry is None:
-            return ('int', -2)
+            return (ResultKind.INT, -2)
         if entry.expire_at is None:
-            return ('int', -1)
-        remaining = entry.expire_at - self._now_fn()
-        if remaining < 0:
-            return ('int', -2)
-        return ('int', int(remaining))
+            return (ResultKind.INT, -1)
+        # _get_live_entry 를 통과했으므로 expire_at > now 가 보장된다.
+        return (ResultKind.INT, int(entry.expire_at - now))

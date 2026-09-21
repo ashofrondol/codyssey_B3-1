@@ -4,7 +4,7 @@ import unittest
 
 from tests.helpers import FakeClock  # noqa: F401  (sys.path 부트스트랩)
 
-from hashmap import HashMap
+from minredis.hashmap import HashMap
 
 
 class TestHashMap(unittest.TestCase):

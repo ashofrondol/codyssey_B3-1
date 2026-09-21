@@ -16,10 +16,7 @@ class MinHeap:
     __slots__ = ('_data',)
 
     def __init__(self):
-        # list는 '인덱스 접근/끝에서의 append·pop이 가능한 배열'로만 사용한다.
-        # 완전 이진 트리를 인덱스 산술로 표현하기 위한 백업 배열이며,
-        # 키-값 매핑이나 선형 탐색 저장소로는 쓰지 않는다.
-        self._data = []
+        self._data = []      # 완전 이진 트리의 백업 배열 (인덱스 산술로 접근)
 
     def __len__(self):
         return len(self._data)

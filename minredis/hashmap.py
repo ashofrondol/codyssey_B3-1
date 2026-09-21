@@ -5,11 +5,11 @@
 늘려서 다시 재배치(rehash)하고, 반대로 0.1875 아래로 헐거워지면
 버킷을 절반으로 줄인다.
 
-내장 dict 사용은 금지되어 있으므로, 버킷 테이블 자체는 '고정 길이
-인덱스 접근 배열' 용도로 파이썬 list를 사용한다.
+버킷 테이블은 고정 길이 배열이고, 키→값 매핑과 체이닝은 이 모듈이 직접
+수행한다. 그 경계를 AST로 강제하는 것은 tests/test_cli.py 의 TestConstraints 다.
 """
 
-from linked_list import DoublyLinkedList
+from .linked_list import DoublyLinkedList
 
 
 class HashMap:
@@ -164,8 +164,7 @@ class HashMap:
 
     @staticmethod
     def _make_buckets(capacity):
-        # list는 '고정 길이 인덱스 접근 배열' 용도로만 사용한다.
-        # 키-값 저장 자료구조로 사용하는 것은 금지된 영역.
+        """capacity개의 빈 체인(버킷)을 가진 고정 길이 배열을 만든다."""
         buckets = [None] * capacity
         for i in range(capacity):
             buckets[i] = DoublyLinkedList()
