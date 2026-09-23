@@ -1,0 +1,198 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="962" viewBox="0 0 880 962" role="img" aria-labelledby="title desc">
+<title id="title">SET user:3 "Charlie" 한 줄이 지나가는 길 (한도 30, 명세 예시)</title>
+<desc id="desc">사용자가 SET user:3 "Charlie" 를 입력하면 cli.py 가 토큰으로 나누고 명령 표에서 SET 을 찾아 MiniRedis.cmd_set 을 부른다. cmd_set 은 크기 13 을 계산해 OOM 이 아님을 확인하고, 20 + 13 = 33 이 한도 30 을 넘으므로 LRU 리스트의 맨 뒤 user:1 을 리스트·해시맵·장부 순서로 지워 used 를 9 로 만든 뒤, user:3 을 리스트 맨 앞에 넣고 그 노드를 담은 엔트리를 해시맵에 넣어 used 22, evicted 1 이 된다. 결과 튜플 (ResultKind.OK,) 은 format_result 로 OK 가 되어 사용자에게 돌아간다.</desc>
+<style>
+  text{font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;font-size:15px;fill:#1D1F23}
+  .bg{fill:#FFFFFF}
+  .ts{font-size:13px;fill:#5B6069}
+  .th{font-size:17px;font-weight:700}
+  .tb{font-weight:700}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,"Noto Sans Mono CJK KR",monospace;font-size:13.5px}
+  .box{fill:#F4F3EF;stroke:#9A9CA3;stroke-width:1.5}
+  .zone{fill:#FAF9F6;stroke:#C9C6BE;stroke-width:1.2;stroke-dasharray:5 4}
+  .blue{fill:#E7EFF9;stroke:#1F5FAD;stroke-width:1.6}
+  .green{fill:#E6F4EC;stroke:#1B7F4B;stroke-width:1.6}
+  .orange{fill:#FCEFE0;stroke:#B25E09;stroke-width:1.6}
+  .red{fill:#FCEBEA;stroke:#B42318;stroke-width:1.6}
+  .purple{fill:#F1EAFB;stroke:#6E3FB0;stroke-width:1.6}
+  .yellow{fill:#FFF3C4;stroke:#A07800;stroke-width:1.6}
+  .c-blue{fill:#1F5FAD}.c-green{fill:#1B7F4B}.c-orange{fill:#B25E09}.c-red{fill:#B42318}.c-purple{fill:#6E3FB0}.c-muted{fill:#5B6069}
+  .ln{stroke:#6B7078;stroke-width:1.6;fill:none}
+  .ln-blue{stroke:#1F5FAD}.ln-green{stroke:#1B7F4B}.ln-red{stroke:#B42318}.ln-orange{stroke:#B25E09}.ln-purple{stroke:#6E3FB0}
+  .dash{stroke-dasharray:6 5}
+  .ah{fill:#6B7078}.ah-blue{fill:#1F5FAD}.ah-green{fill:#1B7F4B}.ah-red{fill:#B42318}.ah-orange{fill:#B25E09}.ah-purple{fill:#6E3FB0}
+  @media (prefers-color-scheme:dark){
+    text{fill:#E8E6E1}
+    .bg{fill:#1A1C20}
+    .ts{fill:#A9A69F}
+    .box{fill:#24262B;stroke:#6B6E76}
+    .zone{fill:#1F2125;stroke:#43464D}
+    .blue{fill:#1B2940;stroke:#7FB0F0}
+    .green{fill:#16281E;stroke:#5FC98E}
+    .orange{fill:#2E2215;stroke:#E8A05A}
+    .red{fill:#301A18;stroke:#F08A80}
+    .purple{fill:#251C33;stroke:#C3A0F0}
+    .yellow{fill:#2E2812;stroke:#E3C45C}
+    .c-blue{fill:#9CC4F5}.c-green{fill:#7ED3A3}.c-orange{fill:#EDB27A}.c-red{fill:#F4A39B}.c-purple{fill:#D2B8F4}.c-muted{fill:#A9A69F}
+    .ln{stroke:#8D9098}
+    .ln-blue{stroke:#7FB0F0}.ln-green{stroke:#5FC98E}.ln-red{stroke:#F08A80}.ln-orange{stroke:#E8A05A}.ln-purple{stroke:#C3A0F0}
+    .ah{fill:#8D9098}.ah-blue{fill:#7FB0F0}.ah-green{fill:#5FC98E}.ah-red{fill:#F08A80}.ah-orange{fill:#E8A05A}.ah-purple{fill:#C3A0F0}
+  }
+</style>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-blue" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-red" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-green" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-orange" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-purple" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="880" height="962"/>
+<text x="24" y="34" class="th">SET user:3 "Charlie" 한 줄이 지나가는 길</text>
+<text x="24" y="57" class="ts">명세 예시 · 한도 maxmemory 30 · 이미 user:1(Alice, 11바이트)와 user:2(Bob, 9바이트)가 있어 used 20</text>
+<line class="ln ln-blue" x1="24" y1="74" x2="52" y2="74" marker-end="url(#arrow-blue)"/>
+<text x="58" y="78" class="ts c-blue">요청·호출</text>
+<line class="ln ln-red" x1="140" y1="74" x2="168" y2="74" marker-end="url(#arrow-red)"/>
+<text x="174" y="78" class="ts c-red">축출(지우기)</text>
+<line class="ln ln-green" x1="270" y1="74" x2="298" y2="74" marker-end="url(#arrow-green)"/>
+<text x="304" y="78" class="ts c-green">삽입·응답</text>
+<line class="ln ln-green dash" x1="386" y1="74" x2="414" y2="74" marker-end="url(#arrow-green)"/>
+<text x="420" y="78" class="ts">점선 = 돌려주는 값</text>
+<text x="548" y="78" class="ts">세로줄 = 각 부품, 위→아래로 시간이 흐름</text>
+<line class="ln" x1="60" y1="144" x2="60" y2="854"/>
+<line class="ln" x1="160" y1="144" x2="160" y2="854"/>
+<line class="ln" x1="400" y1="144" x2="400" y2="854"/>
+<line class="ln" x1="548" y1="144" x2="548" y2="854"/>
+<line class="ln" x1="676" y1="144" x2="676" y2="854"/>
+<line class="ln" x1="804" y1="144" x2="804" y2="854"/>
+<rect class="box" x="24.0" y="88" width="72" height="56" rx="8"/>
+<text x="60" y="110" text-anchor="middle" class="tb">사용자</text>
+<text x="60" y="133" text-anchor="middle" class="ts">입력</text>
+<rect class="box" x="116.0" y="88" width="88" height="56" rx="8"/>
+<text x="160" y="110" text-anchor="middle" class="tb">cli.py</text>
+<text x="160" y="133" text-anchor="middle" class="ts">입력 해석</text>
+<rect class="box" x="328.0" y="88" width="144" height="56" rx="8"/>
+<text x="400" y="110" text-anchor="middle" class="tb">MiniRedis</text>
+<text x="400" y="133" text-anchor="middle" class="mono">mini_redis.py</text>
+<rect class="box" x="492.0" y="88" width="112" height="56" rx="8"/>
+<text x="548" y="110" text-anchor="middle" class="tb">DLL</text>
+<text x="548" y="133" text-anchor="middle" class="mono">_lru</text>
+<rect class="box" x="624.0" y="88" width="104" height="56" rx="8"/>
+<text x="676" y="110" text-anchor="middle" class="tb">HashMap</text>
+<text x="676" y="133" text-anchor="middle" class="mono">_store</text>
+<rect class="box" x="752.0" y="88" width="104" height="56" rx="8"/>
+<text x="804" y="110" text-anchor="middle" class="tb">장부</text>
+<text x="804" y="133" text-anchor="middle" class="ts">used·evicted</text>
+<rect class="box" x="752" y="154" width="104" height="46" rx="8"/>
+<text x="804" y="174" text-anchor="middle" class="mono">used 20</text>
+<text x="804" y="193" text-anchor="middle" class="mono">evicted 0</text>
+<circle class="blue" cx="38" cy="166" r="13"/>
+<text x="38" y="170.5" text-anchor="middle" class="ts tb c-blue">1</text>
+<line class="ln ln-blue" x1="60" y1="182" x2="156" y2="182" marker-end="url(#arrow-blue)"/>
+<rect class="bg" x="64" y="152" width="170" height="26"/>
+<text x="68" y="171" text-anchor="start" class="mono c-blue">SET user:3 "Charlie"</text>
+<circle class="blue" cx="138" cy="219" r="13"/>
+<text x="138" y="223.5" text-anchor="middle" class="ts tb c-blue">2</text>
+<rect class="box" x="172" y="204" width="348" height="66" rx="8"/>
+<text x="186" y="224" class="mono">tokenize → ['SET', 'user:3', 'Charlie']</text>
+<text x="186" y="243" class="mono">dispatch → _Command('SET', 2, 2, …)</text>
+<text x="186" y="262" class="ts">표에서 SET 찾고 인자 2개 확인 · cli.py:292, 251-260</text>
+<circle class="blue" cx="138" cy="287" r="13"/>
+<text x="138" y="291.5" text-anchor="middle" class="ts tb c-blue">3</text>
+<line class="ln ln-blue" x1="160" y1="302" x2="396" y2="302" marker-end="url(#arrow-blue)"/>
+<rect class="bg" x="163" y="273" width="235" height="26"/>
+<text x="280.0" y="292" text-anchor="middle" class="mono c-blue">cmd_set('user:3', 'Charlie')</text>
+<circle class="blue" cx="378" cy="329" r="13"/>
+<text x="378" y="333.5" text-anchor="middle" class="ts tb c-blue">4</text>
+<rect class="box" x="412" y="313" width="256" height="66" rx="8"/>
+<text x="426" y="333" class="mono">new_size = 6 + 7 = 13</text>
+<text x="426" y="352" class="ts">한 칸이 한도보다 큰가? 13 &gt; 30 → 아니오</text>
+<text x="426" y="372" class="ts">mini_redis.py:209, 214</text>
+<circle class="blue" cx="378" cy="400" r="13"/>
+<text x="378" y="404.5" text-anchor="middle" class="ts tb c-blue">5</text>
+<line class="ln ln-blue" x1="400" y1="415" x2="672" y2="415" marker-end="url(#arrow-blue)"/>
+<rect class="bg" x="417" y="386" width="113" height="26"/>
+<text x="474.0" y="405" text-anchor="middle" class="mono c-blue">get('user:3')</text>
+<text x="686" y="420" class="mono">None</text>
+<text x="724" y="420" class="ts">(새 키)</text>
+<circle class="blue" cx="378" cy="446" r="13"/>
+<text x="378" y="450.5" text-anchor="middle" class="ts tb c-blue">6</text>
+<rect class="box" x="412" y="430" width="236" height="66" rx="8"/>
+<text x="426" y="450" class="mono">_evict_to_fit(13)</text>
+<text x="426" y="469" class="ts">만료 키 회수: 힙 비어 있음</text>
+<text x="426" y="489" class="mono c-red">20 + 13 = 33 &gt; 30</text>
+<text x="546" y="489" class="ts c-red">→ 넘침</text>
+<circle class="red" cx="378" cy="517" r="13"/>
+<text x="378" y="521.5" text-anchor="middle" class="ts tb c-red">7</text>
+<line class="ln ln-red" x1="400" y1="532" x2="544" y2="532" marker-end="url(#arrow-red)"/>
+<rect class="bg" x="444" y="503" width="57" height="26"/>
+<text x="472" y="522" text-anchor="middle" class="mono c-red">back()</text>
+<text x="558" y="537" class="mono c-red">user:1</text>
+<text x="612" y="537" class="ts c-red">(맨 뒤)</text>
+<rect class="bg" x="408" y="543" width="186" height="26"/>
+<text x="412" y="562" text-anchor="start" class="mono c-red">_hard_delete('user:1')</text>
+<rect class="bg" x="600" y="543" width="194" height="26"/>
+<text x="604" y="562" text-anchor="start" class="ts">mini_redis.py:187, 195-196</text>
+<line class="ln ln-red" x1="400" y1="596" x2="750" y2="596" marker-end="url(#arrow-red)"/>
+<rect class="red" x="492.0" y="572" width="112" height="48" rx="8"/>
+<text x="548" y="593" text-anchor="middle" class="mono">remove_node</text>
+<text x="548" y="612" text-anchor="middle" class="ts">user:1 빼기</text>
+<rect class="red" x="624.0" y="572" width="104" height="48" rx="8"/>
+<text x="676" y="593" text-anchor="middle" class="mono">remove</text>
+<text x="676" y="612" text-anchor="middle" class="ts">user:1 삭제</text>
+<rect class="red" x="752.0" y="572" width="104" height="48" rx="8"/>
+<text x="804" y="593" text-anchor="middle" class="mono">used 20→9</text>
+<text x="804" y="612" text-anchor="middle" class="mono">evicted 0→1</text>
+<circle class="blue" cx="378" cy="645" r="13"/>
+<text x="378" y="649.5" text-anchor="middle" class="ts tb c-blue">8</text>
+<rect class="box" x="412" y="628" width="200" height="46" rx="8"/>
+<text x="426" y="648" class="mono c-green">9 + 13 = 22 ≤ 30</text>
+<text x="426" y="667" class="ts">자리 확보 → 축출 끝</text>
+<circle class="green" cx="378" cy="695" r="13"/>
+<text x="378" y="699.5" text-anchor="middle" class="ts tb c-green">9</text>
+<rect class="bg" x="408" y="681" width="381" height="26"/>
+<text x="412" y="700" text-anchor="start" class="mono c-green">insert_front('user:3') · put('user:3', _Entry)</text>
+<line class="ln ln-green" x1="400" y1="734" x2="750" y2="734" marker-end="url(#arrow-green)"/>
+<rect class="green" x="492.0" y="710" width="112" height="48" rx="8"/>
+<text x="548" y="731" text-anchor="middle" class="mono">insert_front</text>
+<text x="548" y="750" text-anchor="middle" class="ts">맨 앞에 user:3</text>
+<rect class="green" x="624.0" y="710" width="104" height="48" rx="8"/>
+<text x="676" y="731" text-anchor="middle" class="mono">put</text>
+<text x="676" y="750" text-anchor="middle" class="ts">user:3 저장</text>
+<rect class="green" x="752.0" y="710" width="104" height="48" rx="8"/>
+<text x="804" y="731" text-anchor="middle" class="mono">used 9→22</text>
+<text x="804" y="750" text-anchor="middle" class="mono">evicted 1</text>
+<circle class="green" cx="378" cy="775" r="13"/>
+<text x="378" y="779.5" text-anchor="middle" class="ts tb c-green">10</text>
+<line class="ln ln-green dash" x1="400" y1="794" x2="164" y2="794" marker-end="url(#arrow-green)"/>
+<rect class="bg" x="211" y="765" width="138" height="26"/>
+<text x="280.0" y="784" text-anchor="middle" class="mono c-green">(ResultKind.OK,)</text>
+<rect class="box" x="172" y="810" width="196" height="32" rx="8"/>
+<text x="186" y="831" class="mono">format_result → 'OK'</text>
+<line class="ln ln-green dash" x1="160" y1="826" x2="64" y2="826" marker-end="url(#arrow-green)"/>
+<rect class="bg" x="98" y="797" width="24" height="26"/>
+<text x="110.0" y="816" text-anchor="middle" class="mono tb c-green">OK</text>
+<rect class="zone" x="24" y="864" width="832" height="82" rx="12"/>
+<text x="40" y="886" class="ts tb">SET 전</text>
+<text x="96" y="886" class="mono">used 20 · evicted 0</text>
+<text x="40" y="921" class="ts">앞</text>
+<rect class="box" x="64" y="898" width="96" height="34" rx="6"/>
+<text x="112" y="920" text-anchor="middle" class="mono">user:2</text>
+<line class="ln" x1="164" y1="915" x2="196" y2="915" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+<rect class="red" x="200" y="898" width="96" height="34" rx="6"/>
+<text x="248" y="920" text-anchor="middle" class="mono c-red">user:1</text>
+<text x="304" y="921" class="ts">뒤</text>
+<line class="ln ln-blue" x1="340" y1="915" x2="440" y2="915" marker-end="url(#arrow-blue)"/>
+<rect class="bg" x="365" y="886" width="50" height="26"/>
+<text x="390" y="905" text-anchor="middle" class="ts c-blue">SET 뒤</text>
+<text x="460" y="886" class="ts tb">SET 후</text>
+<text x="516" y="886" class="mono">used 22 · evicted 1</text>
+<text x="460" y="921" class="ts">앞</text>
+<rect class="green" x="484" y="898" width="96" height="34" rx="6"/>
+<text x="532" y="920" text-anchor="middle" class="mono c-green">user:3</text>
+<line class="ln" x1="584" y1="915" x2="616" y2="915" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+<rect class="box" x="620" y="898" width="96" height="34" rx="6"/>
+<text x="668" y="920" text-anchor="middle" class="mono">user:2</text>
+<text x="724" y="921" class="ts">뒤</text>
+<text x="748" y="921" class="ts c-red">user:1 은 사라짐</text>
+</svg>

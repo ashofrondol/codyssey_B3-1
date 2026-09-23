@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="524" viewBox="0 0 840 524" role="img" aria-labelledby="title desc">
+<title id="title">용량 8 해시맵에 키 6개 — 같은 칸에 오면 줄을 선다(체이닝)</title>
+<desc id="desc">용량 8인 해시맵에 name, age, city, email, phone, job 순서로 키 6개를 넣은 실제 상태다. 같은 칸 번호로 접힌 age와 job은 4번 칸, email과 phone은 7번 칸의 이중 연결 리스트에 한 줄로 이어진다. GET job 은 4번 칸의 줄만 앞에서부터 비교해 두 번 만에 찾는다. 키가 없는 칸에도 경계 노드 H 와 T 만 이어진 빈 리스트가 미리 만들어져 있다.</desc>
+<style>
+  text{font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;font-size:15px;fill:#1D1F23}
+  .bg{fill:#FFFFFF}
+  .ts{font-size:13px;fill:#5B6069}
+  .th{font-size:17px;font-weight:700}
+  .tb{font-weight:700}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,"Noto Sans Mono CJK KR",monospace;font-size:13.5px}
+  .box{fill:#F4F3EF;stroke:#9A9CA3;stroke-width:1.5}
+  .zone{fill:#FAF9F6;stroke:#C9C6BE;stroke-width:1.2;stroke-dasharray:5 4}
+  .blue{fill:#E7EFF9;stroke:#1F5FAD;stroke-width:1.6}
+  .green{fill:#E6F4EC;stroke:#1B7F4B;stroke-width:1.6}
+  .orange{fill:#FCEFE0;stroke:#B25E09;stroke-width:1.6}
+  .red{fill:#FCEBEA;stroke:#B42318;stroke-width:1.6}
+  .purple{fill:#F1EAFB;stroke:#6E3FB0;stroke-width:1.6}
+  .yellow{fill:#FFF3C4;stroke:#A07800;stroke-width:1.6}
+  .c-blue{fill:#1F5FAD}.c-green{fill:#1B7F4B}.c-orange{fill:#B25E09}.c-red{fill:#B42318}.c-purple{fill:#6E3FB0}.c-muted{fill:#5B6069}
+  .ln{stroke:#6B7078;stroke-width:1.6;fill:none}
+  .ln-blue{stroke:#1F5FAD}.ln-green{stroke:#1B7F4B}.ln-red{stroke:#B42318}.ln-orange{stroke:#B25E09}.ln-purple{stroke:#6E3FB0}
+  .dash{stroke-dasharray:6 5}
+  .ah{fill:#6B7078}.ah-blue{fill:#1F5FAD}.ah-green{fill:#1B7F4B}.ah-red{fill:#B42318}.ah-orange{fill:#B25E09}.ah-purple{fill:#6E3FB0}
+  @media (prefers-color-scheme:dark){
+    text{fill:#E8E6E1}
+    .bg{fill:#1A1C20}
+    .ts{fill:#A9A69F}
+    .box{fill:#24262B;stroke:#6B6E76}
+    .zone{fill:#1F2125;stroke:#43464D}
+    .blue{fill:#1B2940;stroke:#7FB0F0}
+    .green{fill:#16281E;stroke:#5FC98E}
+    .orange{fill:#2E2215;stroke:#E8A05A}
+    .red{fill:#301A18;stroke:#F08A80}
+    .purple{fill:#251C33;stroke:#C3A0F0}
+    .yellow{fill:#2E2812;stroke:#E3C45C}
+    .c-blue{fill:#9CC4F5}.c-green{fill:#7ED3A3}.c-orange{fill:#EDB27A}.c-red{fill:#F4A39B}.c-purple{fill:#D2B8F4}.c-muted{fill:#A9A69F}
+    .ln{stroke:#8D9098}
+    .ln-blue{stroke:#7FB0F0}.ln-green{stroke:#5FC98E}.ln-red{stroke:#F08A80}.ln-orange{stroke:#E8A05A}.ln-purple{stroke:#C3A0F0}
+    .ah{fill:#8D9098}.ah-blue{fill:#7FB0F0}.ah-green{fill:#5FC98E}.ah-red{fill:#F08A80}.ah-orange{fill:#E8A05A}.ah-purple{fill:#C3A0F0}
+  }
+</style>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-blue" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-red" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-green" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-orange" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-purple" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="840" height="524"/>
+<text class="th" x="24" y="34">용량 8 해시맵에 키 6개 — 같은 칸에 오면 줄을 선다</text>
+<text class="ts" x="24" y="56">보라 = 버킷 배열과 노드 · 회색 점선 = 경계 노드(H/T) · 파랑 = GET job 이 따라가는 길 · 노랑 = 찾은 노드</text>
+<text class="ts" x="68.0" y="90" text-anchor="middle">버킷 배열</text>
+<rect class="purple" x="40" y="96" width="56" height="40" rx="0"/>
+<rect class="purple" x="40" y="136" width="56" height="40" rx="0"/>
+<rect class="purple" x="40" y="176" width="56" height="40" rx="0"/>
+<rect class="purple" x="40" y="216" width="56" height="40" rx="0"/>
+<rect class="purple" x="40" y="256" width="56" height="40" rx="0"/>
+<rect class="purple" x="40" y="296" width="56" height="40" rx="0"/>
+<rect class="purple" x="40" y="336" width="56" height="40" rx="0"/>
+<rect class="purple" x="40" y="376" width="56" height="40" rx="0"/>
+<text class="mono c-purple" x="68.0" y="121.0" text-anchor="middle">[0]</text>
+<line class="ln ln-purple" x1="96" y1="116.0" x2="118" y2="116.0"/>
+<rect class="box dash" x="118" y="102.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="133.0" y="121.0" text-anchor="middle">H</text>
+<line class="ln ln-purple" x1="152" y1="116.0" x2="188" y2="116.0" marker-end="url(#arrow-purple)" marker-start="url(#arrow-purple)"/>
+<rect class="box dash" x="192" y="102.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="207.0" y="121.0" text-anchor="middle">T</text>
+<text class="mono c-purple" x="68.0" y="161.0" text-anchor="middle">[1]</text>
+<line class="ln ln-purple" x1="96" y1="156.0" x2="118" y2="156.0"/>
+<rect class="box dash" x="118" y="142.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="133.0" y="161.0" text-anchor="middle">H</text>
+<line class="ln ln-purple" x1="152" y1="156.0" x2="188" y2="156.0" marker-end="url(#arrow-purple)" marker-start="url(#arrow-purple)"/>
+<rect class="box dash" x="192" y="142.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="207.0" y="161.0" text-anchor="middle">T</text>
+<text class="mono c-purple" x="68.0" y="201.0" text-anchor="middle">[2]</text>
+<line class="ln ln-purple" x1="96" y1="196.0" x2="118" y2="196.0"/>
+<rect class="box dash" x="118" y="182.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="133.0" y="201.0" text-anchor="middle">H</text>
+<line class="ln ln-purple" x1="152" y1="196.0" x2="188" y2="196.0" marker-end="url(#arrow-purple)" marker-start="url(#arrow-purple)"/>
+<rect class="purple" x="192" y="182.0" width="72" height="28" rx="6"/>
+<text class="mono" x="228.0" y="201.0" text-anchor="middle">city</text>
+<line class="ln ln-purple" x1="268" y1="196.0" x2="304" y2="196.0" marker-end="url(#arrow-purple)" marker-start="url(#arrow-purple)"/>
+<rect class="box dash" x="308" y="182.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="323.0" y="201.0" text-anchor="middle">T</text>
+<text class="mono c-purple" x="68.0" y="241.0" text-anchor="middle">[3]</text>
+<line class="ln ln-purple" x1="96" y1="236.0" x2="118" y2="236.0"/>
+<rect class="box dash" x="118" y="222.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="133.0" y="241.0" text-anchor="middle">H</text>
+<line class="ln ln-purple" x1="152" y1="236.0" x2="188" y2="236.0" marker-end="url(#arrow-purple)" marker-start="url(#arrow-purple)"/>
+<rect class="box dash" x="192" y="222.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="207.0" y="241.0" text-anchor="middle">T</text>
+<text class="mono c-purple" x="68.0" y="281.0" text-anchor="middle">[4]</text>
+<line class="ln ln-blue" x1="96" y1="276.0" x2="118" y2="276.0"/>
+<rect class="box dash" x="118" y="262.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="133.0" y="281.0" text-anchor="middle">H</text>
+<line class="ln ln-blue" x1="152" y1="276.0" x2="188" y2="276.0" marker-end="url(#arrow-blue)"/>
+<rect class="purple" x="192" y="262.0" width="72" height="28" rx="6"/>
+<text class="mono" x="228.0" y="281.0" text-anchor="middle">age</text>
+<line class="ln ln-blue" x1="268" y1="276.0" x2="304" y2="276.0" marker-end="url(#arrow-blue)"/>
+<rect class="yellow" x="308" y="262.0" width="72" height="28" rx="6"/>
+<text class="mono" x="344.0" y="281.0" text-anchor="middle">job</text>
+<line class="ln ln-purple" x1="384" y1="276.0" x2="420" y2="276.0" marker-end="url(#arrow-purple)" marker-start="url(#arrow-purple)"/>
+<rect class="box dash" x="424" y="262.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="439.0" y="281.0" text-anchor="middle">T</text>
+<text class="mono c-purple" x="68.0" y="321.0" text-anchor="middle">[5]</text>
+<line class="ln ln-purple" x1="96" y1="316.0" x2="118" y2="316.0"/>
+<rect class="box dash" x="118" y="302.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="133.0" y="321.0" text-anchor="middle">H</text>
+<line class="ln ln-purple" x1="152" y1="316.0" x2="188" y2="316.0" marker-end="url(#arrow-purple)" marker-start="url(#arrow-purple)"/>
+<rect class="box dash" x="192" y="302.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="207.0" y="321.0" text-anchor="middle">T</text>
+<text class="mono c-purple" x="68.0" y="361.0" text-anchor="middle">[6]</text>
+<line class="ln ln-purple" x1="96" y1="356.0" x2="118" y2="356.0"/>
+<rect class="box dash" x="118" y="342.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="133.0" y="361.0" text-anchor="middle">H</text>
+<line class="ln ln-purple" x1="152" y1="356.0" x2="188" y2="356.0" marker-end="url(#arrow-purple)" marker-start="url(#arrow-purple)"/>
+<rect class="purple" x="192" y="342.0" width="72" height="28" rx="6"/>
+<text class="mono" x="228.0" y="361.0" text-anchor="middle">name</text>
+<line class="ln ln-purple" x1="268" y1="356.0" x2="304" y2="356.0" marker-end="url(#arrow-purple)" marker-start="url(#arrow-purple)"/>
+<rect class="box dash" x="308" y="342.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="323.0" y="361.0" text-anchor="middle">T</text>
+<text class="mono c-purple" x="68.0" y="401.0" text-anchor="middle">[7]</text>
+<line class="ln ln-purple" x1="96" y1="396.0" x2="118" y2="396.0"/>
+<rect class="box dash" x="118" y="382.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="133.0" y="401.0" text-anchor="middle">H</text>
+<line class="ln ln-purple" x1="152" y1="396.0" x2="188" y2="396.0" marker-end="url(#arrow-purple)" marker-start="url(#arrow-purple)"/>
+<rect class="purple" x="192" y="382.0" width="72" height="28" rx="6"/>
+<text class="mono" x="228.0" y="401.0" text-anchor="middle">email</text>
+<line class="ln ln-purple" x1="268" y1="396.0" x2="304" y2="396.0" marker-end="url(#arrow-purple)" marker-start="url(#arrow-purple)"/>
+<rect class="purple" x="308" y="382.0" width="72" height="28" rx="6"/>
+<text class="mono" x="344.0" y="401.0" text-anchor="middle">phone</text>
+<line class="ln ln-purple" x1="384" y1="396.0" x2="420" y2="396.0" marker-end="url(#arrow-purple)" marker-start="url(#arrow-purple)"/>
+<rect class="box dash" x="424" y="382.0" width="30" height="28" rx="4"/>
+<text class="mono c-muted" x="439.0" y="401.0" text-anchor="middle">T</text>
+<rect class="blue" x="496" y="192" width="320" height="168" rx="10"/>
+<text class="th c-blue" x="512" y="220">GET job</text>
+<text x="512" y="250"><tspan class="c-blue tb">① </tspan><tspan class="mono">_index('job', 8) = 4</tspan></text>
+<text x="512" y="278"><tspan class="c-blue tb">② </tspan><tspan class="ts">버킷 4 줄을 앞에서부터</tspan></text>
+<text class="mono" x="534" y="304">age ≠ job</text>
+<text class="c-blue" x="620" y="304">→</text>
+<text class="mono" x="644" y="304">job == job ✓</text>
+<text x="512" y="336"><tspan class="c-blue tb">③ </tspan><tspan class="ts">비교 2번이면 끝</tspan></text>
+<line class="ln ln-blue" x1="494" y1="236" x2="384" y2="257" marker-end="url(#arrow-blue)"/>
+<text class="ts" x="496" y="396">각 키의 칸 번호 = FNV-1a 해시 % 8</text>
+<text class="mono" x="496" y="420">name 6 · age 4 · city 2</text>
+<text class="mono" x="496" y="442">email 7 · phone 7 · job 4</text>
+<text class="ts" x="24" y="448">노드 data = (키, 값) 튜플 · H/T = 데이터 없는 경계 노드(sentinel)</text>
+<text class="ts" x="24" y="472">키가 없는 칸에도 H⇄T 빈 리스트를 미리 만들어 둔다(칸당 184 B)</text>
+<text x="24" y="502"><tspan class="tb">로드 팩터 = 6 / 8 = 0.75</tspan><tspan class="ts">  →  "초과"가 아니라 아직 확장 안 함 (7번째 키에서 확장)</tspan></text>
+</svg>

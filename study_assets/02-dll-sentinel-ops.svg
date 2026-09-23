@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="584" viewBox="0 0 860 584" role="img" aria-labelledby="title desc">
+<title id="title">sentinel 이 있는 이중 연결 리스트 — 떼고 붙이는 데 포인터 몇 개만</title>
+<desc id="desc">head 와 tail sentinel 사이에 c, b, a 세 노드가 있는 리스트에서 remove_node(b) 는 c 의 next 와 a 의 prev 두 포인터만 바꿔 b 를 떼어 내고, move_to_front(a) 는 떼기 2번과 _link 4번, 모두 6번의 포인터 쓰기로 a 를 맨 앞으로 옮긴다. 리스트를 처음부터 훑는 일이 없어서 길이와 상관없이 O(1) 이다.</desc>
+<style>
+  text{font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;font-size:15px;fill:#1D1F23}
+  .bg{fill:#FFFFFF}
+  .ts{font-size:13px;fill:#5B6069}
+  .th{font-size:17px;font-weight:700}
+  .tb{font-weight:700}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,"Noto Sans Mono CJK KR",monospace;font-size:13.5px}
+  .box{fill:#F4F3EF;stroke:#9A9CA3;stroke-width:1.5}
+  .zone{fill:#FAF9F6;stroke:#C9C6BE;stroke-width:1.2;stroke-dasharray:5 4}
+  .blue{fill:#E7EFF9;stroke:#1F5FAD;stroke-width:1.6}
+  .green{fill:#E6F4EC;stroke:#1B7F4B;stroke-width:1.6}
+  .orange{fill:#FCEFE0;stroke:#B25E09;stroke-width:1.6}
+  .red{fill:#FCEBEA;stroke:#B42318;stroke-width:1.6}
+  .purple{fill:#F1EAFB;stroke:#6E3FB0;stroke-width:1.6}
+  .yellow{fill:#FFF3C4;stroke:#A07800;stroke-width:1.6}
+  .c-blue{fill:#1F5FAD}.c-green{fill:#1B7F4B}.c-orange{fill:#B25E09}.c-red{fill:#B42318}.c-purple{fill:#6E3FB0}.c-muted{fill:#5B6069}
+  .ln{stroke:#6B7078;stroke-width:1.6;fill:none}
+  .ln-blue{stroke:#1F5FAD}.ln-green{stroke:#1B7F4B}.ln-red{stroke:#B42318}.ln-orange{stroke:#B25E09}.ln-purple{stroke:#6E3FB0}
+  .dash{stroke-dasharray:6 5}
+  .ah{fill:#6B7078}.ah-blue{fill:#1F5FAD}.ah-green{fill:#1B7F4B}.ah-red{fill:#B42318}.ah-orange{fill:#B25E09}.ah-purple{fill:#6E3FB0}
+  @media (prefers-color-scheme:dark){
+    text{fill:#E8E6E1}
+    .bg{fill:#1A1C20}
+    .ts{fill:#A9A69F}
+    .box{fill:#24262B;stroke:#6B6E76}
+    .zone{fill:#1F2125;stroke:#43464D}
+    .blue{fill:#1B2940;stroke:#7FB0F0}
+    .green{fill:#16281E;stroke:#5FC98E}
+    .orange{fill:#2E2215;stroke:#E8A05A}
+    .red{fill:#301A18;stroke:#F08A80}
+    .purple{fill:#251C33;stroke:#C3A0F0}
+    .yellow{fill:#2E2812;stroke:#E3C45C}
+    .c-blue{fill:#9CC4F5}.c-green{fill:#7ED3A3}.c-orange{fill:#EDB27A}.c-red{fill:#F4A39B}.c-purple{fill:#D2B8F4}.c-muted{fill:#A9A69F}
+    .ln{stroke:#8D9098}
+    .ln-blue{stroke:#7FB0F0}.ln-green{stroke:#5FC98E}.ln-red{stroke:#F08A80}.ln-orange{stroke:#E8A05A}.ln-purple{stroke:#C3A0F0}
+    .ah{fill:#8D9098}.ah-blue{fill:#7FB0F0}.ah-green{fill:#5FC98E}.ah-red{fill:#F08A80}.ah-orange{fill:#E8A05A}.ah-purple{fill:#C3A0F0}
+  }
+</style>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-blue" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-red" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-green" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-orange" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-purple" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="860" height="584"/>
+<text class="th" x="24" y="34">sentinel 이 있는 이중 연결 리스트 — 떼고 붙이는 데 포인터 몇 개만</text>
+<text class="ts" x="24" y="56">보라 = 데이터 노드 · 점선 테두리 = sentinel(늘 있는 빈 노드) / 제거됨 · 노랑 = 방금 바뀐 곳 · 위 화살표 = next, 아래 화살표 = prev</text>
+<text class="tb" x="24" y="132">① 시작</text>
+<text class="ts" x="24" y="152">노드 3개 + sentinel 2개</text>
+<text class="ts c-purple" x="368" y="100">◀ 앞 = 최근(MRU)</text>
+<text class="ts c-purple" x="656" y="100" text-anchor="end">뒤 = 오래됨(LRU) ▶</text>
+<rect class="box dash" x="256" y="112" width="64" height="44" rx="8"/>
+<text class="mono" x="288.0" y="139.0" text-anchor="middle">head</text>
+<rect class="purple" x="368" y="112" width="64" height="44" rx="8"/>
+<text class="mono tb" x="400.0" y="139.0" text-anchor="middle">c</text>
+<rect class="purple" x="480" y="112" width="64" height="44" rx="8"/>
+<text class="mono tb" x="512.0" y="139.0" text-anchor="middle">b</text>
+<rect class="purple" x="592" y="112" width="64" height="44" rx="8"/>
+<text class="mono tb" x="624.0" y="139.0" text-anchor="middle">a</text>
+<rect class="box dash" x="704" y="112" width="64" height="44" rx="8"/>
+<text class="mono" x="736.0" y="139.0" text-anchor="middle">tail</text>
+<line class="ln" x1="323" y1="126.0" x2="364" y2="126.0" marker-end="url(#arrow)"/>
+<line class="ln" x1="365" y1="142.0" x2="324" y2="142.0" marker-end="url(#arrow)"/>
+<line class="ln" x1="435" y1="126.0" x2="476" y2="126.0" marker-end="url(#arrow)"/>
+<line class="ln" x1="477" y1="142.0" x2="436" y2="142.0" marker-end="url(#arrow)"/>
+<line class="ln" x1="547" y1="126.0" x2="588" y2="126.0" marker-end="url(#arrow)"/>
+<line class="ln" x1="589" y1="142.0" x2="548" y2="142.0" marker-end="url(#arrow)"/>
+<line class="ln" x1="659" y1="126.0" x2="700" y2="126.0" marker-end="url(#arrow)"/>
+<line class="ln" x1="701" y1="142.0" x2="660" y2="142.0" marker-end="url(#arrow)"/>
+<text class="ts" x="288" y="174" text-anchor="middle">sentinel</text>
+<text class="ts" x="736" y="174" text-anchor="middle">sentinel</text>
+<text class="tb" x="24" y="226">② 떼어내기</text>
+<text class="mono tb" x="24" y="248">remove_node(b)</text>
+<text class="ts tb" x="512" y="202" text-anchor="middle">바뀐 연결 2개</text>
+<rect class="yellow" x="437" y="213" width="150" height="34" rx="6"/>
+<rect class="box dash" x="256" y="208" width="64" height="44" rx="8"/>
+<text class="mono" x="288.0" y="235.0" text-anchor="middle">head</text>
+<rect class="purple" x="368" y="208" width="64" height="44" rx="8"/>
+<text class="mono tb" x="400.0" y="235.0" text-anchor="middle">c</text>
+<rect class="purple" x="592" y="208" width="64" height="44" rx="8"/>
+<text class="mono tb" x="624.0" y="235.0" text-anchor="middle">a</text>
+<rect class="box dash" x="704" y="208" width="64" height="44" rx="8"/>
+<text class="mono" x="736.0" y="235.0" text-anchor="middle">tail</text>
+<line class="ln" x1="323" y1="222" x2="364" y2="222" marker-end="url(#arrow)"/>
+<line class="ln" x1="365" y1="238" x2="324" y2="238" marker-end="url(#arrow)"/>
+<line class="ln" x1="435" y1="222" x2="588" y2="222" marker-end="url(#arrow)"/>
+<line class="ln" x1="589" y1="238" x2="436" y2="238" marker-end="url(#arrow)"/>
+<line class="ln" x1="659" y1="222" x2="700" y2="222" marker-end="url(#arrow)"/>
+<line class="ln" x1="701" y1="238" x2="660" y2="238" marker-end="url(#arrow)"/>
+<rect class="red dash" x="480" y="276" width="64" height="44" rx="8"/>
+<text class="mono tb c-red" x="512.0" y="303.0" text-anchor="middle">b</text>
+<text class="ts" x="556" y="303">prev·next·owner = None</text>
+<text class="mono" x="24" y="292">node.prev.next = node.next</text>
+<text class="mono" x="24" y="312">node.next.prev = node.prev</text>
+<text class="ts" x="24" y="332">linked_list.py:109-110</text>
+<text class="ts" x="240" y="292">→ c.next = a</text>
+<text class="ts" x="240" y="312">→ a.prev = c</text>
+<text class="tb" x="24" y="394">③ 맨 앞으로</text>
+<text class="mono tb" x="24" y="416">move_to_front(a)</text>
+<rect class="box dash" x="256" y="376" width="64" height="44" rx="8"/>
+<text class="mono" x="288.0" y="403.0" text-anchor="middle">head</text>
+<rect class="yellow" x="368" y="376" width="64" height="44" rx="8"/>
+<text class="mono tb" x="400.0" y="403.0" text-anchor="middle">a</text>
+<rect class="purple" x="480" y="376" width="64" height="44" rx="8"/>
+<text class="mono tb" x="512.0" y="403.0" text-anchor="middle">c</text>
+<rect class="box dash" x="592" y="376" width="64" height="44" rx="8"/>
+<text class="mono" x="624.0" y="403.0" text-anchor="middle">tail</text>
+<line class="ln" x1="323" y1="390.0" x2="364" y2="390.0" marker-end="url(#arrow)"/>
+<line class="ln" x1="365" y1="406.0" x2="324" y2="406.0" marker-end="url(#arrow)"/>
+<line class="ln" x1="435" y1="390.0" x2="476" y2="390.0" marker-end="url(#arrow)"/>
+<line class="ln" x1="477" y1="406.0" x2="436" y2="406.0" marker-end="url(#arrow)"/>
+<line class="ln" x1="547" y1="390.0" x2="588" y2="390.0" marker-end="url(#arrow)"/>
+<line class="ln" x1="589" y1="406.0" x2="548" y2="406.0" marker-end="url(#arrow)"/>
+<text class="ts" x="256" y="452">떼기 2개 + _link 4개 = 포인터 6번 쓰기 · 순회 없음 → <tspan class="tb">O(1)</tspan></text>
+<text class="ts" x="256" y="472">linked_list.py:128-131</text>
+<rect class="box" x="24" y="496" width="812" height="64" rx="10"/>
+<text class="ts" x="40" y="518">빈 리스트</text>
+<rect class="box dash" x="104" y="508" width="56" height="40" rx="8"/>
+<text class="mono" x="132" y="533" text-anchor="middle">head</text>
+<rect class="box dash" x="200" y="508" width="56" height="40" rx="8"/>
+<text class="mono" x="228" y="533" text-anchor="middle">tail</text>
+<line class="ln" x1="163" y1="520" x2="196" y2="520" marker-end="url(#arrow)"/>
+<line class="ln" x1="197" y1="536" x2="164" y2="536" marker-end="url(#arrow)"/>
+<text x="280" y="533">빈 리스트도 head ⇄ tail 로 이어져 있어 "비었나?" 분기가 없다</text>
+</svg>

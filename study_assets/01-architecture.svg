@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="736" viewBox="0 0 880 736" role="img" aria-labelledby="title desc">
+<title id="title">Mini Redis 한눈에 보기 — 명령 한 줄이 지나가는 층</title>
+<desc id="desc">사용자가 터미널에 친 SET user:1 "Alice" 한 줄이 CLI 계층의 tokenize 와 dispatch 를 거쳐 코어 MiniRedis 의 cmd_set 으로 가고, 코어는 HashMap, DoublyLinkedList, MinHeap 세 자료구조를 고친다. 코어가 돌려준 (ResultKind.OK,) 튜플은 format_result 에서 OK 라는 글자가 되어 사용자에게 돌아간다.</desc>
+<style>
+  text{font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;font-size:15px;fill:#1D1F23}
+  .bg{fill:#FFFFFF}
+  .ts{font-size:13px;fill:#5B6069}
+  .th{font-size:17px;font-weight:700}
+  .tb{font-weight:700}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,"Noto Sans Mono CJK KR",monospace;font-size:13.5px}
+  .box{fill:#F4F3EF;stroke:#9A9CA3;stroke-width:1.5}
+  .zone{fill:#FAF9F6;stroke:#C9C6BE;stroke-width:1.2;stroke-dasharray:5 4}
+  .blue{fill:#E7EFF9;stroke:#1F5FAD;stroke-width:1.6}
+  .green{fill:#E6F4EC;stroke:#1B7F4B;stroke-width:1.6}
+  .orange{fill:#FCEFE0;stroke:#B25E09;stroke-width:1.6}
+  .red{fill:#FCEBEA;stroke:#B42318;stroke-width:1.6}
+  .purple{fill:#F1EAFB;stroke:#6E3FB0;stroke-width:1.6}
+  .yellow{fill:#FFF3C4;stroke:#A07800;stroke-width:1.6}
+  .c-blue{fill:#1F5FAD}.c-green{fill:#1B7F4B}.c-orange{fill:#B25E09}.c-red{fill:#B42318}.c-purple{fill:#6E3FB0}.c-muted{fill:#5B6069}
+  .ln{stroke:#6B7078;stroke-width:1.6;fill:none}
+  .ln-blue{stroke:#1F5FAD}.ln-green{stroke:#1B7F4B}.ln-red{stroke:#B42318}.ln-orange{stroke:#B25E09}.ln-purple{stroke:#6E3FB0}
+  .dash{stroke-dasharray:6 5}
+  .ah{fill:#6B7078}.ah-blue{fill:#1F5FAD}.ah-green{fill:#1B7F4B}.ah-red{fill:#B42318}.ah-orange{fill:#B25E09}.ah-purple{fill:#6E3FB0}
+  @media (prefers-color-scheme:dark){
+    text{fill:#E8E6E1}
+    .bg{fill:#1A1C20}
+    .ts{fill:#A9A69F}
+    .box{fill:#24262B;stroke:#6B6E76}
+    .zone{fill:#1F2125;stroke:#43464D}
+    .blue{fill:#1B2940;stroke:#7FB0F0}
+    .green{fill:#16281E;stroke:#5FC98E}
+    .orange{fill:#2E2215;stroke:#E8A05A}
+    .red{fill:#301A18;stroke:#F08A80}
+    .purple{fill:#251C33;stroke:#C3A0F0}
+    .yellow{fill:#2E2812;stroke:#E3C45C}
+    .c-blue{fill:#9CC4F5}.c-green{fill:#7ED3A3}.c-orange{fill:#EDB27A}.c-red{fill:#F4A39B}.c-purple{fill:#D2B8F4}.c-muted{fill:#A9A69F}
+    .ln{stroke:#8D9098}
+    .ln-blue{stroke:#7FB0F0}.ln-green{stroke:#5FC98E}.ln-red{stroke:#F08A80}.ln-orange{stroke:#E8A05A}.ln-purple{stroke:#C3A0F0}
+    .ah{fill:#8D9098}.ah-blue{fill:#7FB0F0}.ah-green{fill:#5FC98E}.ah-red{fill:#F08A80}.ah-orange{fill:#E8A05A}.ah-purple{fill:#C3A0F0}
+  }
+</style>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-blue" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-red" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-green" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-orange" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-purple" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="880" height="736"/>
+<text class="th" x="24" y="34">Mini Redis 한눈에 보기 — 명령 한 줄이 지나가는 층</text>
+<text class="ts" x="24" y="56"><tspan class="c-blue">파랑 = 요청 흐름</tspan> · <tspan class="c-green">초록 = 응답</tspan> · <tspan class="c-purple">보라 = 데이터 구조</tspan> · 번호 ①→④ 순서로 읽는다</text>
+
+<!-- 사용자 (터미널) -->
+<rect class="box" x="24" y="72" width="832" height="52" rx="10"/>
+<text class="tb" x="40" y="103">사용자 (터미널)</text>
+<text class="mono c-blue" x="300" y="103" text-anchor="middle">SET user:1 "Alice"</text>
+<text class="mono c-green tb" x="536" y="103" text-anchor="middle">OK</text>
+
+<!-- 프로세스 -->
+<rect class="zone" x="24" y="144" width="832" height="568" rx="14"/>
+<text class="tb" x="40" y="170">python main.py 프로세스</text>
+<rect class="box" x="656" y="152" width="184" height="52" rx="8"/>
+<text class="mono" x="748" y="173" text-anchor="middle">main.py</text>
+<text class="ts" x="748" y="193" text-anchor="middle">진입점: repl() 호출</text>
+
+<!-- CLI 계층 -->
+<rect class="zone" x="40" y="216" width="600" height="192" rx="12"/>
+<text class="ts tb" x="56" y="238">CLI 계층 · minredis/cli.py</text>
+
+<rect class="blue" x="180" y="256" width="240" height="48" rx="10"/>
+<text class="tb c-blue" x="300" y="276" text-anchor="middle">① tokenize</text>
+<text class="ts" x="300" y="295" text-anchor="middle">글자 → 토큰</text>
+
+<rect class="blue" x="180" y="344" width="240" height="48" rx="10"/>
+<text class="tb c-blue" x="300" y="364" text-anchor="middle">② dispatch + COMMANDS 표</text>
+<text class="ts" x="300" y="383" text-anchor="middle">명령 찾기 · 인자 수 검사</text>
+
+<rect class="green" x="448" y="256" width="176" height="48" rx="10"/>
+<text class="tb c-green" x="536" y="276" text-anchor="middle">④ format_result</text>
+<text class="ts" x="536" y="295" text-anchor="middle">튜플 → Redis 문자열</text>
+
+<!-- protocol.py -->
+<rect class="box" x="656" y="316" width="184" height="92" rx="8"/>
+<text class="mono" x="748" y="338" text-anchor="middle">protocol.py</text>
+<text class="ts" x="748" y="358" text-anchor="middle">ResultKind:</text>
+<text class="ts" x="748" y="376" text-anchor="middle">OK·NIL·INT·BULK</text>
+<text class="ts" x="748" y="394" text-anchor="middle">ARRAY·INFO·ERROR·EXIT</text>
+
+<!-- 코어 -->
+<rect class="zone" x="40" y="440" width="800" height="144" rx="12"/>
+<text class="ts tb" x="56" y="462">코어 · minredis/mini_redis.py</text>
+
+<rect class="blue" x="180" y="480" width="452" height="56" rx="10"/>
+<text class="tb c-blue" x="406" y="502" text-anchor="middle">③ MiniRedis.cmd_* (10개)</text>
+<text class="ts" x="406" y="524" text-anchor="middle">SET·GET·DEL·EXISTS·DBSIZE·KEYS·CONFIG·INFO·EXPIRE·TTL</text>
+
+<rect class="purple" x="656" y="464" width="168" height="104" rx="10"/>
+<text class="tb c-purple" x="740" y="488" text-anchor="middle">장부</text>
+<text class="mono" x="740" y="512" text-anchor="middle">used_memory</text>
+<text class="mono" x="740" y="532" text-anchor="middle">maxmemory</text>
+<text class="mono" x="740" y="552" text-anchor="middle">evicted_keys</text>
+
+<!-- 자료구조 3종 -->
+<rect class="purple" x="40" y="616" width="208" height="80" rx="10"/>
+<text class="tb c-purple" x="144" y="640" text-anchor="middle">HashMap _store</text>
+<text class="mono" x="144" y="661" text-anchor="middle">hashmap.py</text>
+<text class="ts" x="144" y="682" text-anchor="middle">키 → _Entry</text>
+
+<rect class="purple" x="376" y="616" width="208" height="80" rx="10"/>
+<text class="tb c-purple" x="480" y="640" text-anchor="middle">DoublyLinkedList _lru</text>
+<text class="mono" x="480" y="661" text-anchor="middle">linked_list.py</text>
+<text class="ts" x="480" y="682" text-anchor="middle">사용 순서 · 앞=최근</text>
+
+<rect class="purple" x="632" y="616" width="208" height="80" rx="10"/>
+<text class="tb c-purple" x="736" y="640" text-anchor="middle">MinHeap _ttl_heap</text>
+<text class="mono" x="736" y="661" text-anchor="middle">heap.py</text>
+<text class="ts" x="736" y="682" text-anchor="middle">(expire_at, key)</text>
+
+<!-- 요청 흐름 (파랑) -->
+<line class="ln ln-blue" x1="300" y1="124" x2="300" y2="252" marker-end="url(#arrow-blue)"/>
+<line class="ln ln-blue" x1="300" y1="304" x2="300" y2="340" marker-end="url(#arrow-blue)"/>
+<text class="mono c-blue" x="288" y="327" text-anchor="end">['SET', 'user:1', 'Alice']</text>
+<line class="ln ln-blue" x1="300" y1="392" x2="300" y2="476" marker-end="url(#arrow-blue)"/>
+<text class="mono c-blue" x="288" y="428" text-anchor="end">cmd_set('user:1', 'Alice')</text>
+
+<!-- 응답 흐름 (초록) -->
+<line class="ln ln-green" x1="536" y1="480" x2="536" y2="308" marker-end="url(#arrow-green)"/>
+<text class="mono c-green" x="524" y="428" text-anchor="end">(ResultKind.OK,)</text>
+<line class="ln ln-green" x1="536" y1="256" x2="536" y2="128" marker-end="url(#arrow-green)"/>
+
+<!-- 코어 → 자료구조 (보라) -->
+<line class="ln ln-purple" x1="144" y1="584" x2="144" y2="612" marker-end="url(#arrow-purple)"/>
+<line class="ln ln-purple" x1="480" y1="584" x2="480" y2="612" marker-end="url(#arrow-purple)"/>
+<line class="ln ln-purple" x1="736" y1="584" x2="736" y2="612" marker-end="url(#arrow-purple)"/>
+
+<!-- HashMap 이 DLL 을 버킷 체인으로 재사용 -->
+<line class="ln" x1="248" y1="672" x2="372" y2="672" marker-end="url(#arrow)"/>
+<text class="ts" x="312" y="662" text-anchor="middle">버킷 체인에 재사용</text>
+</svg>

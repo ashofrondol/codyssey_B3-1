@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="616" viewBox="0 0 880 616" role="img" aria-labelledby="title desc">
+<title id="title">최소 힙 — 트리로 생각하고 배열에 저장한다</title>
+<desc id="desc">만료 시각이 1050, 1020, 1040, 1010, 1030 인 키 a~e 를 차례로 넣은 최소 힙을 트리와 배열 두 모습으로 보여 준다. 부모는 늘 자식보다 작아 배열 0번이 가장 이른 만료(1010.0, d)이고, 자리는 부모 (i-1)//2, 자식 2i+1·2i+2 로 계산한다. 오른쪽은 4번째 원소 d 를 넣을 때(그때 배열 길이 4, 끝은 3번) 교환 2번(트리 높이)만에 맨 위로 올라가는 과정과, 맨 앞을 꺼낼 때 아래로 내려가는 과정이다.</desc>
+<style>
+  text{font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;font-size:15px;fill:#1D1F23}
+  .bg{fill:#FFFFFF}
+  .ts{font-size:13px;fill:#5B6069}
+  .th{font-size:17px;font-weight:700}
+  .tb{font-weight:700}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,"Noto Sans Mono CJK KR",monospace;font-size:13.5px}
+  .box{fill:#F4F3EF;stroke:#9A9CA3;stroke-width:1.5}
+  .zone{fill:#FAF9F6;stroke:#C9C6BE;stroke-width:1.2;stroke-dasharray:5 4}
+  .blue{fill:#E7EFF9;stroke:#1F5FAD;stroke-width:1.6}
+  .green{fill:#E6F4EC;stroke:#1B7F4B;stroke-width:1.6}
+  .orange{fill:#FCEFE0;stroke:#B25E09;stroke-width:1.6}
+  .red{fill:#FCEBEA;stroke:#B42318;stroke-width:1.6}
+  .purple{fill:#F1EAFB;stroke:#6E3FB0;stroke-width:1.6}
+  .yellow{fill:#FFF3C4;stroke:#A07800;stroke-width:1.6}
+  .c-blue{fill:#1F5FAD}.c-green{fill:#1B7F4B}.c-orange{fill:#B25E09}.c-red{fill:#B42318}.c-purple{fill:#6E3FB0}.c-muted{fill:#5B6069}
+  .ln{stroke:#6B7078;stroke-width:1.6;fill:none}
+  .ln-blue{stroke:#1F5FAD}.ln-green{stroke:#1B7F4B}.ln-red{stroke:#B42318}.ln-orange{stroke:#B25E09}.ln-purple{stroke:#6E3FB0}
+  .dash{stroke-dasharray:6 5}
+  .ah{fill:#6B7078}.ah-blue{fill:#1F5FAD}.ah-green{fill:#1B7F4B}.ah-red{fill:#B42318}.ah-orange{fill:#B25E09}.ah-purple{fill:#6E3FB0}
+  @media (prefers-color-scheme:dark){
+    text{fill:#E8E6E1}
+    .bg{fill:#1A1C20}
+    .ts{fill:#A9A69F}
+    .box{fill:#24262B;stroke:#6B6E76}
+    .zone{fill:#1F2125;stroke:#43464D}
+    .blue{fill:#1B2940;stroke:#7FB0F0}
+    .green{fill:#16281E;stroke:#5FC98E}
+    .orange{fill:#2E2215;stroke:#E8A05A}
+    .red{fill:#301A18;stroke:#F08A80}
+    .purple{fill:#251C33;stroke:#C3A0F0}
+    .yellow{fill:#2E2812;stroke:#E3C45C}
+    .c-blue{fill:#9CC4F5}.c-green{fill:#7ED3A3}.c-orange{fill:#EDB27A}.c-red{fill:#F4A39B}.c-purple{fill:#D2B8F4}.c-muted{fill:#A9A69F}
+    .ln{stroke:#8D9098}
+    .ln-blue{stroke:#7FB0F0}.ln-green{stroke:#5FC98E}.ln-red{stroke:#F08A80}.ln-orange{stroke:#E8A05A}.ln-purple{stroke:#C3A0F0}
+    .ah{fill:#8D9098}.ah-blue{fill:#7FB0F0}.ah-green{fill:#5FC98E}.ah-red{fill:#F08A80}.ah-orange{fill:#E8A05A}.ah-purple{fill:#C3A0F0}
+  }
+</style>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-blue" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-red" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-green" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-orange" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-purple" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="880" height="616"/>
+
+<text class="th" x="24" y="36">최소 힙 — 트리로 생각하고 배열에 저장한다</text>
+<text class="ts" x="24" y="58">now = 1000.0 에 EXPIRE a 50, b 20, c 40, d 10, e 30 순서로 넣은 실제 결과 · 칸 안의 값 = (만료 시각, 키)</text>
+<text class="ts" x="24" y="78">보라 = 힙 항목 · 노랑 = 맨 위(가장 이른 만료) · 주황 선 = 4번째로 넣은 d 가 3번 칸에서 0번까지 올라온 길</text>
+
+<!-- tree edges -->
+<line class="ln ln-orange" x1="296" y1="152" x2="172" y2="200" style="stroke-width:3"/>
+<line class="ln" x1="296" y1="152" x2="420" y2="200"/>
+<line class="ln ln-orange" x1="172" y1="240" x2="92" y2="288" style="stroke-width:3"/>
+<line class="ln" x1="172" y1="240" x2="252" y2="288"/>
+<text class="ts c-orange" x="220" y="172" text-anchor="end">교환 ②</text>
+<text class="ts c-orange" x="116" y="262" text-anchor="end">교환 ①</text>
+
+<!-- tree nodes -->
+<text class="ts" x="228" y="106">0번</text>
+<rect class="yellow" x="228" y="112" width="136" height="40" rx="10"/>
+<text class="mono" x="296" y="137" text-anchor="middle">(1010.0, 'd')</text>
+<text class="ts" x="372" y="137">← 가장 이른 만료 (peek)</text>
+
+<text class="ts" x="104" y="194">1번</text>
+<rect class="purple" x="104" y="200" width="136" height="40" rx="10"/>
+<text class="mono" x="172" y="225" text-anchor="middle">(1020.0, 'b')</text>
+
+<text class="ts" x="352" y="194">2번</text>
+<rect class="purple" x="352" y="200" width="136" height="40" rx="10"/>
+<text class="mono" x="420" y="225" text-anchor="middle">(1040.0, 'c')</text>
+
+<text class="ts" x="24" y="282">3번</text>
+<rect class="purple" x="24" y="288" width="136" height="40" rx="10"/>
+<text class="mono" x="92" y="313" text-anchor="middle">(1050.0, 'a')</text>
+
+<text class="ts" x="184" y="282">4번</text>
+<rect class="purple" x="184" y="288" width="136" height="40" rx="10"/>
+<text class="mono" x="252" y="313" text-anchor="middle">(1030.0, 'e')</text>
+
+<text class="ts" x="340" y="300">규칙: 부모 ≤ 자식</text>
+<text class="ts" x="340" y="318">(형제끼리는 순서 없음)</text>
+
+<!-- formula box -->
+<rect class="box" x="24" y="352" width="464" height="72" rx="10"/>
+<text class="tb" x="40" y="378">자리 계산 (heap.py:62, 73-74)</text>
+<text class="mono" x="40" y="404">부모 = (i - 1) // 2</text>
+<text class="mono" x="236" y="404">자식 = 2i + 1, 2i + 2</text>
+
+<!-- push panel -->
+<rect class="orange" x="520" y="96" width="336" height="164" rx="12"/>
+<text class="tb c-orange" x="536" y="122">새 항목 넣기 = 위로 올리기</text>
+<text class="mono" x="536" y="146">push (1010.0, 'd') → _heapify_up</text>
+<text class="ts" x="536" y="174">① 넣을 때 원소가 4개 → 끝인 3번에 넣는다</text>
+<text class="ts" x="536" y="198">② 부모 1번 (1050.0, 'a') 보다 작다 → 교환</text>
+<text class="ts" x="536" y="222">③ 부모 0번 (1020.0, 'b') 보다 작다 → 교환</text>
+<text class="tb" x="536" y="248">0번 도착 · 교환 2번 = 트리 높이</text>
+
+<!-- pop panel -->
+<rect class="box" x="520" y="276" width="336" height="148" rx="12"/>
+<text class="tb" x="536" y="302">맨 앞 꺼내기 = 아래로 내리기</text>
+<text class="mono" x="536" y="326">pop → _heapify_down</text>
+<text class="ts" x="536" y="350">① (1010.0, 'd') 꺼냄 · 마지막 (1030.0, 'e') 를 0번에</text>
+<text class="ts" x="536" y="372">② 더 작은 자식 (1020.0, 'b') 와 교환 → 멈춤</text>
+<text class="mono" x="536" y="396">[(1020.0,'b'), (1030.0,'e'),</text>
+<text class="mono" x="536" y="414"> (1040.0,'c'), (1050.0,'a')]</text>
+
+<!-- array -->
+<text class="tb" x="24" y="458">실제로 저장된 모습: 트리를 층 순서대로 담은 배열 <tspan class="mono">self._data</tspan> <tspan class="ts">(heap.py:19)</tspan></text>
+<text class="ts" x="152" y="474" text-anchor="middle">[0]</text>
+<text class="ts" x="304" y="474" text-anchor="middle">[1]</text>
+<text class="ts" x="456" y="474" text-anchor="middle">[2]</text>
+<text class="ts" x="608" y="474" text-anchor="middle">[3]</text>
+<text class="ts" x="760" y="474" text-anchor="middle">[4]</text>
+<rect class="yellow" x="80" y="480" width="144" height="40" rx="6"/>
+<rect class="purple" x="232" y="480" width="144" height="40" rx="6"/>
+<rect class="purple" x="384" y="480" width="144" height="40" rx="6"/>
+<rect class="purple" x="536" y="480" width="144" height="40" rx="6"/>
+<rect class="purple" x="688" y="480" width="144" height="40" rx="6"/>
+<text class="mono" x="152" y="505" text-anchor="middle">(1010.0, 'd')</text>
+<text class="mono" x="304" y="505" text-anchor="middle">(1020.0, 'b')</text>
+<text class="mono" x="456" y="505" text-anchor="middle">(1040.0, 'c')</text>
+<text class="mono" x="608" y="505" text-anchor="middle">(1050.0, 'a')</text>
+<text class="mono" x="760" y="505" text-anchor="middle">(1030.0, 'e')</text>
+<path class="ln ln-purple" d="M760,524 C760,570 304,570 304,528" marker-end="url(#arrow-purple)"/>
+<rect class="bg" x="440" y="541" width="184" height="32"/>
+<text class="ts c-purple" x="532" y="563" text-anchor="middle">4번의 부모 = (4 - 1) // 2 = 1</text>
+
+<text class="ts c-orange" x="24" y="596">주의: 정렬된 배열이 아니다 — 3번 1050.0 이 4번 1030.0 보다 앞에 있다. 힙은 부모 ≤ 자식만 지킨다.</text>
+</svg>

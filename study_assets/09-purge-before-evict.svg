@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="620" viewBox="0 0 880 620" role="img" aria-labelledby="title desc">
+<title id="title">축출 전에 만료 키를 먼저 치우면 / 안 치우면 (한도 30)</title>
+<desc id="desc">한도 30 에서 user:2(9B), user:1(11B)을 넣고 user:1 이 만료된 뒤 user:3(13B)을 SET 한다. 지금 코드는 축출 전에 만료된 user:1 을 먼저 회수해 아무것도 축출하지 않고 user:2 가 살아남는다(used_memory 22, evicted_keys 0). 회수 한 줄을 지운 사본은 살아 있는 user:2 를 축출하고 evicted_keys 가 1 로 오염된다(실제 실행 결과).</desc>
+<style>
+  text{font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;font-size:15px;fill:#1D1F23}
+  .bg{fill:#FFFFFF}
+  .ts{font-size:13px;fill:#5B6069}
+  .th{font-size:17px;font-weight:700}
+  .tb{font-weight:700}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,"Noto Sans Mono CJK KR",monospace;font-size:13.5px}
+  .box{fill:#F4F3EF;stroke:#9A9CA3;stroke-width:1.5}
+  .zone{fill:#FAF9F6;stroke:#C9C6BE;stroke-width:1.2;stroke-dasharray:5 4}
+  .blue{fill:#E7EFF9;stroke:#1F5FAD;stroke-width:1.6}
+  .green{fill:#E6F4EC;stroke:#1B7F4B;stroke-width:1.6}
+  .orange{fill:#FCEFE0;stroke:#B25E09;stroke-width:1.6}
+  .red{fill:#FCEBEA;stroke:#B42318;stroke-width:1.6}
+  .purple{fill:#F1EAFB;stroke:#6E3FB0;stroke-width:1.6}
+  .yellow{fill:#FFF3C4;stroke:#A07800;stroke-width:1.6}
+  .c-blue{fill:#1F5FAD}.c-green{fill:#1B7F4B}.c-orange{fill:#B25E09}.c-red{fill:#B42318}.c-purple{fill:#6E3FB0}.c-muted{fill:#5B6069}
+  .ln{stroke:#6B7078;stroke-width:1.6;fill:none}
+  .ln-blue{stroke:#1F5FAD}.ln-green{stroke:#1B7F4B}.ln-red{stroke:#B42318}.ln-orange{stroke:#B25E09}.ln-purple{stroke:#6E3FB0}
+  .dash{stroke-dasharray:6 5}
+  .ah{fill:#6B7078}.ah-blue{fill:#1F5FAD}.ah-green{fill:#1B7F4B}.ah-red{fill:#B42318}.ah-orange{fill:#B25E09}.ah-purple{fill:#6E3FB0}
+  @media (prefers-color-scheme:dark){
+    text{fill:#E8E6E1}
+    .bg{fill:#1A1C20}
+    .ts{fill:#A9A69F}
+    .box{fill:#24262B;stroke:#6B6E76}
+    .zone{fill:#1F2125;stroke:#43464D}
+    .blue{fill:#1B2940;stroke:#7FB0F0}
+    .green{fill:#16281E;stroke:#5FC98E}
+    .orange{fill:#2E2215;stroke:#E8A05A}
+    .red{fill:#301A18;stroke:#F08A80}
+    .purple{fill:#251C33;stroke:#C3A0F0}
+    .yellow{fill:#2E2812;stroke:#E3C45C}
+    .c-blue{fill:#9CC4F5}.c-green{fill:#7ED3A3}.c-orange{fill:#EDB27A}.c-red{fill:#F4A39B}.c-purple{fill:#D2B8F4}.c-muted{fill:#A9A69F}
+    .ln{stroke:#8D9098}
+    .ln-blue{stroke:#7FB0F0}.ln-green{stroke:#5FC98E}.ln-red{stroke:#F08A80}.ln-orange{stroke:#E8A05A}.ln-purple{stroke:#C3A0F0}
+    .ah{fill:#8D9098}.ah-blue{fill:#7FB0F0}.ah-green{fill:#5FC98E}.ah-red{fill:#F08A80}.ah-orange{fill:#E8A05A}.ah-purple{fill:#C3A0F0}
+  }
+</style>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-blue" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-red" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-green" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-orange" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-purple" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="880" height="620"/>
+
+<text class="th" x="24" y="36">축출 전에 만료 키를 먼저 치우면 / 안 치우면 (한도 30)</text>
+<text class="ts" x="24" y="58">초록 = 지금 코드(안전) · 빨강 = 회수 한 줄을 지운 사본(오류) · 주황 = 만료됐지만 장부에 남은 키 · 양쪽 모두 실제 실행 결과</text>
+
+<!-- common input -->
+<rect class="box" x="24" y="72" width="832" height="172" rx="12"/>
+<text class="tb" x="40" y="96">공통 입력 (양쪽 똑같이)</text>
+<text x="40" y="122"><tspan class="mono">CONFIG SET maxmemory 30</tspan><tspan class="ts" dx="8">→</tspan><tspan class="mono" dx="8">SET user:2 "Bob"</tspan><tspan class="ts" dx="6">(9B)</tspan><tspan class="ts" dx="8">→</tspan><tspan class="mono" dx="8">SET user:1 "Alice"</tspan><tspan class="ts" dx="6">(11B)</tspan></text>
+<text x="40" y="146"><tspan class="ts">→</tspan><tspan class="mono" dx="8">EXPIRE user:1 1</tspan><tspan class="ts" dx="8">→ 1.3초 뒤 (user:1 만료, 아직 장부에 남음) →</tspan><tspan class="mono" dx="8">SET user:3 "Charlie"</tspan><tspan class="ts" dx="6">(13B)</tspan></text>
+
+<text class="tb" x="40" y="185">SET user:3 직전</text>
+<rect class="purple" x="200" y="164" width="108" height="32"/>
+<text class="mono" x="254" y="185" text-anchor="middle">user:2 9</text>
+<rect class="orange" x="308" y="164" width="132" height="32"/>
+<text x="374" y="185" text-anchor="middle"><tspan class="mono">user:1 11</tspan><tspan class="ts c-orange" dx="4">만료</tspan></text>
+<rect class="zone" x="440" y="164" width="120" height="32"/>
+<text class="ts" x="500" y="185" text-anchor="middle">빈 자리 10</text>
+<text class="ts" x="572" y="178">used_memory 20</text>
+<text class="ts" x="572" y="194">한도 30 · user:3 은 13 필요</text>
+
+<text class="tb" x="40" y="227">LRU 리스트</text>
+<rect class="orange" x="200" y="208" width="152" height="28" rx="6"/>
+<text class="ts" x="276" y="227" text-anchor="middle">앞(최근) user:1 만료</text>
+<line class="ln" x1="356" y1="222" x2="388" y2="222" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+<rect class="purple" x="392" y="208" width="168" height="28" rx="6"/>
+<text class="ts" x="476" y="227" text-anchor="middle">뒤(가장 오래됨) user:2</text>
+<text class="ts" x="572" y="227">← 축출은 맨 뒤부터 고른다</text>
+
+<!-- left: current code -->
+<rect class="green" x="24" y="260" width="408" height="284" rx="12"/>
+<text class="tb c-green" x="40" y="286">지금 코드: 만료 회수를 먼저</text>
+<text class="ts" x="40" y="306">mini_redis.py:182 · 축출 루프 바로 앞</text>
+<text class="ts" x="40" y="336">① 만료 회수: user:1 삭제 → used 9</text>
+<text class="ts" x="58" y="356">evicted_keys 는 그대로 0 (축출이 아님)</text>
+<text x="40" y="386"><tspan class="ts">②</tspan><tspan class="mono" dx="6">9 + 13 = 22 ≤ 30</tspan><tspan class="ts c-green" dx="8">→ 축출 없음</tspan></text>
+<text class="ts" x="40" y="416">③ 이어서 GET / KEYS / INFO memory</text>
+<text class="mono" x="58" y="440">GET user:2 → "Bob"</text>
+<text class="mono" x="58" y="460">KEYS → 1) "user:3" 2) "user:2"</text>
+<text class="mono" x="58" y="480">used_memory:22</text>
+<text class="mono" x="58" y="500">evicted_keys:0</text>
+<text class="ts c-green" x="40" y="526">※ 22 = user:2 9 + user:3 13 (user:1 은 ①에서 회수)</text>
+
+<!-- right: mutant -->
+<rect class="red" x="448" y="260" width="408" height="284" rx="12"/>
+<text class="tb c-red" x="464" y="286">회수 한 줄을 지우면 (뮤턴트)</text>
+<text class="ts" x="464" y="306">182번 줄을 뺀 사본을 실제로 실행</text>
+<text x="464" y="336"><tspan class="ts">①</tspan><tspan class="mono" dx="6">20 + 13 = 33 &gt; 30</tspan><tspan class="ts c-red" dx="8">→ 맨 뒤 user:2 축출 (1)</tspan></text>
+<text class="ts c-red" x="482" y="356">살아 있는 키가 희생 (2) · evicted_keys 1</text>
+<text x="464" y="386"><tspan class="ts">②</tspan><tspan class="mono" dx="6">11 + 13 = 24 ≤ 30</tspan><tspan class="ts" dx="8">→ 멈춤</tspan></text>
+<text class="ts" x="464" y="416">③ 이어서 GET / KEYS / INFO memory</text>
+<text class="mono" x="482" y="440">GET user:2 → (nil)</text>
+<text class="mono" x="482" y="460">KEYS → 1) "user:3"</text>
+<text class="mono" x="482" y="480">used_memory:13</text>
+<text class="mono" x="482" y="500">evicted_keys:1</text>
+<text class="ts c-red" x="604" y="500">(3) 없어도 될 축출이 기록됨</text>
+<text class="ts" x="464" y="526">※ 13: SET 직후엔 24, 뒤이은 KEYS 가 user:1 을 늦게 회수</text>
+
+<!-- three faults -->
+<text class="tb" x="24" y="585">회수가 막는 세 가지 잘못</text>
+<rect class="red" x="224" y="564" width="140" height="32" rx="16"/>
+<text class="ts c-red" x="294" y="585" text-anchor="middle">(1) 불필요한 축출</text>
+<rect class="red" x="376" y="564" width="164" height="32" rx="16"/>
+<text class="ts c-red" x="458" y="585" text-anchor="middle">(2) 살아 있는 키 희생</text>
+<rect class="red" x="552" y="564" width="176" height="32" rx="16"/>
+<text class="ts c-red" x="640" y="585" text-anchor="middle">(3) evicted_keys 오염</text>
+<text class="ts" x="740" y="585">주석 177-179</text>
+</svg>

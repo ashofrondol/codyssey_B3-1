@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="464" viewBox="0 0 880 464" role="img" aria-labelledby="title desc">
+<title id="title">키 user:1 이 3번 칸이 되기까지 — 해시값 생성과 인덱스 산출</title>
+<desc id="desc">FNV-1a 해시는 키 user:1 의 UTF-8 바이트 6개마다 XOR 한 뒤 FNV_PRIME 을 곱하는 일을 반복해 64비트 해시값 0xf7fd9aaa75081ceb 를 만든다. 그 값을 버킷 수 8 로 나눈 나머지 3 이 버킷 번호가 되고, 용량이 16 이면 나머지는 11 이 된다.</desc>
+<style>
+  text{font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;font-size:15px;fill:#1D1F23}
+  .bg{fill:#FFFFFF}
+  .ts{font-size:13px;fill:#5B6069}
+  .th{font-size:17px;font-weight:700}
+  .tb{font-weight:700}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,"Noto Sans Mono CJK KR",monospace;font-size:13.5px}
+  .box{fill:#F4F3EF;stroke:#9A9CA3;stroke-width:1.5}
+  .zone{fill:#FAF9F6;stroke:#C9C6BE;stroke-width:1.2;stroke-dasharray:5 4}
+  .blue{fill:#E7EFF9;stroke:#1F5FAD;stroke-width:1.6}
+  .green{fill:#E6F4EC;stroke:#1B7F4B;stroke-width:1.6}
+  .orange{fill:#FCEFE0;stroke:#B25E09;stroke-width:1.6}
+  .red{fill:#FCEBEA;stroke:#B42318;stroke-width:1.6}
+  .purple{fill:#F1EAFB;stroke:#6E3FB0;stroke-width:1.6}
+  .yellow{fill:#FFF3C4;stroke:#A07800;stroke-width:1.6}
+  .c-blue{fill:#1F5FAD}.c-green{fill:#1B7F4B}.c-orange{fill:#B25E09}.c-red{fill:#B42318}.c-purple{fill:#6E3FB0}.c-muted{fill:#5B6069}
+  .ln{stroke:#6B7078;stroke-width:1.6;fill:none}
+  .ln-blue{stroke:#1F5FAD}.ln-green{stroke:#1B7F4B}.ln-red{stroke:#B42318}.ln-orange{stroke:#B25E09}.ln-purple{stroke:#6E3FB0}
+  .dash{stroke-dasharray:6 5}
+  .ah{fill:#6B7078}.ah-blue{fill:#1F5FAD}.ah-green{fill:#1B7F4B}.ah-red{fill:#B42318}.ah-orange{fill:#B25E09}.ah-purple{fill:#6E3FB0}
+  @media (prefers-color-scheme:dark){
+    text{fill:#E8E6E1}
+    .bg{fill:#1A1C20}
+    .ts{fill:#A9A69F}
+    .box{fill:#24262B;stroke:#6B6E76}
+    .zone{fill:#1F2125;stroke:#43464D}
+    .blue{fill:#1B2940;stroke:#7FB0F0}
+    .green{fill:#16281E;stroke:#5FC98E}
+    .orange{fill:#2E2215;stroke:#E8A05A}
+    .red{fill:#301A18;stroke:#F08A80}
+    .purple{fill:#251C33;stroke:#C3A0F0}
+    .yellow{fill:#2E2812;stroke:#E3C45C}
+    .c-blue{fill:#9CC4F5}.c-green{fill:#7ED3A3}.c-orange{fill:#EDB27A}.c-red{fill:#F4A39B}.c-purple{fill:#D2B8F4}.c-muted{fill:#A9A69F}
+    .ln{stroke:#8D9098}
+    .ln-blue{stroke:#7FB0F0}.ln-green{stroke:#5FC98E}.ln-red{stroke:#F08A80}.ln-orange{stroke:#E8A05A}.ln-purple{stroke:#C3A0F0}
+    .ah{fill:#8D9098}.ah-blue{fill:#7FB0F0}.ah-green{fill:#5FC98E}.ah-red{fill:#F08A80}.ah-orange{fill:#E8A05A}.ah-purple{fill:#C3A0F0}
+  }
+</style>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-blue" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-red" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-green" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-orange" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-purple" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="880" height="464"/>
+<text class="th" x="24" y="34">키 user:1 이 3번 칸이 되기까지 — 해시값 생성과 인덱스 산출</text>
+<text class="ts" x="24" y="56"><tspan class="c-blue">파랑 = 입력 흐름</tspan> · <tspan class="c-purple">보라 = 버킷 배열</tspan> · 노랑 = 최종 해시값과 고른 칸 · 표의 값은 실제 계산 결과</text>
+<rect class="zone" x="24" y="72" width="520" height="368" rx="12"/>
+<text class="ts tb" x="40" y="96">① 해시값 생성 · _hash (hashmap.py:119-152)</text>
+<rect class="blue" x="40" y="112" width="96" height="52" rx="10"/>
+<text class="tb c-blue" x="88" y="133" text-anchor="middle">키</text>
+<text class="mono" x="88" y="153" text-anchor="middle">user:1</text>
+<line class="ln ln-blue" x1="136" y1="144" x2="236" y2="144" marker-end="url(#arrow-blue)"/>
+<text class="ts" x="188" y="134" text-anchor="middle">UTF-8 인코딩</text>
+<rect class="blue" x="240" y="112" width="208" height="52" rx="10"/>
+<text class="tb c-blue" x="344" y="133" text-anchor="middle">바이트 6개</text>
+<text class="mono" x="344" y="153" text-anchor="middle">117 115 101 114 58 49</text>
+<text class="mono" x="40" y="194">h = 0xcbf29ce484222325</text>
+<text class="ts" x="236" y="194">← 시작값 (FNV_OFFSET)</text>
+<text class="mono" x="40" y="216">PRIME = 0x100000001b3</text>
+<text class="ts" x="236" y="216">← 곱하는 수 (FNV_PRIME)</text>
+<text class="ts tb" x="40" y="246">바이트마다</text>
+<text class="mono" x="112" y="246">h ^= byte → h = (h * PRIME) &amp; MASK64</text>
+<text class="ts" x="48" y="274">글자</text><text class="ts" x="124" y="274" text-anchor="end">바이트</text><text class="ts" x="156" y="274">이 바이트까지 넣은 뒤의 h</text>
+<text class="mono" x="52" y="296">'u'</text><text class="mono" x="116" y="296" text-anchor="end">117</text><text class="mono" x="130" y="296">→</text><text class="mono" x="156" y="296">0xaf63e84c860200f0</text>
+<text class="mono" x="52" y="318">'s'</text><text class="mono" x="116" y="318" text-anchor="end">115</text><text class="mono" x="130" y="318">→</text><text class="mono" x="156" y="318">0x08c43d07b566de99</text>
+<text class="mono" x="52" y="340">'e'</text><text class="mono" x="116" y="340" text-anchor="end">101</text><text class="mono" x="130" y="340">→</text><text class="mono" x="156" y="340">0x4c52b0193dcce634</text>
+<text class="mono" x="52" y="362">'r'</text><text class="mono" x="116" y="362" text-anchor="end">114</text><text class="mono" x="130" y="362">→</text><text class="mono" x="156" y="362">0x7d6780e4032b48f2</text>
+<text class="mono" x="52" y="384">':'</text><text class="mono" x="116" y="384" text-anchor="end">58</text><text class="mono" x="130" y="384">→</text><text class="mono" x="156" y="384">0x4228cb71628cabd8</text>
+<rect class="yellow" x="42" y="387" width="272" height="27" rx="4"/>
+<text class="mono tb" x="52" y="406">'1'</text><text class="mono tb" x="116" y="406" text-anchor="end">49</text><text class="mono tb" x="130" y="406">→</text><text class="mono tb" x="156" y="406">0xf7fd9aaa75081ceb</text>
+<line class="ln" x1="316" y1="402" x2="340" y2="402" marker-end="url(#arrow)"/>
+<rect class="yellow" x="344" y="372" width="184" height="56" rx="10"/>
+<text class="tb" x="436" y="394" text-anchor="middle">64비트 해시값</text>
+<text class="mono" x="436" y="415" text-anchor="middle">0xf7fd9aaa75081ceb</text>
+<rect class="zone" x="568" y="72" width="288" height="368" rx="12"/>
+<text class="ts tb" x="584" y="96">② 인덱스 산출</text>
+<text class="ts" x="584" y="114">_index (hashmap.py:163)</text>
+<text class="ts" x="584" y="148">버킷 배열 · 처음 용량 8칸</text>
+<text class="mono" x="600" y="176" text-anchor="middle">[0]</text>
+<rect class="purple" x="584" y="184" width="32" height="40"/>
+<text class="mono" x="632" y="176" text-anchor="middle">[1]</text>
+<rect class="purple" x="616" y="184" width="32" height="40"/>
+<text class="mono" x="664" y="176" text-anchor="middle">[2]</text>
+<rect class="purple" x="648" y="184" width="32" height="40"/>
+<text class="mono" x="696" y="176" text-anchor="middle">[3]</text>
+<rect class="yellow" x="680" y="184" width="32" height="40"/>
+<text class="mono" x="728" y="176" text-anchor="middle">[4]</text>
+<rect class="purple" x="712" y="184" width="32" height="40"/>
+<text class="mono" x="760" y="176" text-anchor="middle">[5]</text>
+<rect class="purple" x="744" y="184" width="32" height="40"/>
+<text class="mono" x="792" y="176" text-anchor="middle">[6]</text>
+<rect class="purple" x="776" y="184" width="32" height="40"/>
+<text class="mono" x="824" y="176" text-anchor="middle">[7]</text>
+<rect class="purple" x="808" y="184" width="32" height="40"/>
+<text class="mono" x="584" y="405">0xf7fd9aaa75081ceb % 8 = <tspan class="tb">3</tspan></text>
+<line class="ln ln-blue" x1="696" y1="380" x2="696" y2="228" marker-end="url(#arrow-blue)"/>
+<text class="ts tb" x="708" y="252">버킷 3</text>
+<text class="ts" x="584" y="300">나머지는 늘</text>
+<text class="ts" x="584" y="318">0~7 → 칸 번호</text>
+<line class="ln ln-blue" x1="528" y1="400" x2="580" y2="400" marker-end="url(#arrow-blue)"/>
+<text class="ts" x="584" y="428">용량 16 이면 % 16 = 11</text>
+</svg>

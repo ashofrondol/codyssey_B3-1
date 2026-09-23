@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="536" viewBox="0 0 880 536" role="img" aria-labelledby="title desc">
+<title id="title">시각 1010에 DBSIZE 가 힙을 청소하는 순서 — lazy deletion 과 stale 거르기</title>
+<desc id="desc">시각 1000 에 a·b·c 에 TTL 을 걸고(b 는 두 번) c 는 SET 으로 TTL 을 지운 뒤, 시각 1010 에 DBSIZE 를 부르면 힙 맨 앞부터 네 항목을 판정한다. 시각이 지났고 저장소의 현재 expire_at 과 같으면 삭제, 다르면 낡은 항목으로 버리고, 미래 시각을 만나면 멈춘다. 결과는 DBSIZE 1, 힙에는 낡은 (1100.0, 'b') 하나가 남는다.</desc>
+<style>
+  text{font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;font-size:15px;fill:#1D1F23}
+  .bg{fill:#FFFFFF}
+  .ts{font-size:13px;fill:#5B6069}
+  .th{font-size:17px;font-weight:700}
+  .tb{font-weight:700}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,"Noto Sans Mono CJK KR",monospace;font-size:13.5px}
+  .box{fill:#F4F3EF;stroke:#9A9CA3;stroke-width:1.5}
+  .zone{fill:#FAF9F6;stroke:#C9C6BE;stroke-width:1.2;stroke-dasharray:5 4}
+  .blue{fill:#E7EFF9;stroke:#1F5FAD;stroke-width:1.6}
+  .green{fill:#E6F4EC;stroke:#1B7F4B;stroke-width:1.6}
+  .orange{fill:#FCEFE0;stroke:#B25E09;stroke-width:1.6}
+  .red{fill:#FCEBEA;stroke:#B42318;stroke-width:1.6}
+  .purple{fill:#F1EAFB;stroke:#6E3FB0;stroke-width:1.6}
+  .yellow{fill:#FFF3C4;stroke:#A07800;stroke-width:1.6}
+  .c-blue{fill:#1F5FAD}.c-green{fill:#1B7F4B}.c-orange{fill:#B25E09}.c-red{fill:#B42318}.c-purple{fill:#6E3FB0}.c-muted{fill:#5B6069}
+  .ln{stroke:#6B7078;stroke-width:1.6;fill:none}
+  .ln-blue{stroke:#1F5FAD}.ln-green{stroke:#1B7F4B}.ln-red{stroke:#B42318}.ln-orange{stroke:#B25E09}.ln-purple{stroke:#6E3FB0}
+  .dash{stroke-dasharray:6 5}
+  .ah{fill:#6B7078}.ah-blue{fill:#1F5FAD}.ah-green{fill:#1B7F4B}.ah-red{fill:#B42318}.ah-orange{fill:#B25E09}.ah-purple{fill:#6E3FB0}
+  @media (prefers-color-scheme:dark){
+    text{fill:#E8E6E1}
+    .bg{fill:#1A1C20}
+    .ts{fill:#A9A69F}
+    .box{fill:#24262B;stroke:#6B6E76}
+    .zone{fill:#1F2125;stroke:#43464D}
+    .blue{fill:#1B2940;stroke:#7FB0F0}
+    .green{fill:#16281E;stroke:#5FC98E}
+    .orange{fill:#2E2215;stroke:#E8A05A}
+    .red{fill:#301A18;stroke:#F08A80}
+    .purple{fill:#251C33;stroke:#C3A0F0}
+    .yellow{fill:#2E2812;stroke:#E3C45C}
+    .c-blue{fill:#9CC4F5}.c-green{fill:#7ED3A3}.c-orange{fill:#EDB27A}.c-red{fill:#F4A39B}.c-purple{fill:#D2B8F4}.c-muted{fill:#A9A69F}
+    .ln{stroke:#8D9098}
+    .ln-blue{stroke:#7FB0F0}.ln-green{stroke:#5FC98E}.ln-red{stroke:#F08A80}.ln-orange{stroke:#E8A05A}.ln-purple{stroke:#C3A0F0}
+    .ah{fill:#8D9098}.ah-blue{fill:#7FB0F0}.ah-green{fill:#5FC98E}.ah-red{fill:#F08A80}.ah-orange{fill:#E8A05A}.ah-purple{fill:#C3A0F0}
+  }
+</style>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-blue" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-red" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-green" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-orange" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-purple" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="880" height="536"/>
+
+<text class="th" x="24" y="36">시각 1010에 DBSIZE 가 힙을 청소하는 순서 — lazy deletion 과 낡은 항목 거르기</text>
+<text class="ts" x="24" y="58">빨강 = 삭제 · 회색 = 낡은 항목이라 버림 · 초록 = 정상 종료(멈춤) · 주황 = 낡았지만 남는 항목</text>
+
+<rect class="box" x="24" y="72" width="832" height="60" rx="10"/>
+<text x="40" y="96"><tspan class="tb">시각 1000</tspan><tspan class="ts" dx="10">SET a, b, c 뒤에</tspan><tspan class="mono" dx="10">EXPIRE a 5 · EXPIRE b 100 · EXPIRE b 8 · EXPIRE c 6 · SET c new</tspan></text>
+<text x="40" y="120"><tspan class="tb">시각 1010</tspan><tspan class="mono" dx="10">DBSIZE</tspan><tspan class="ts" dx="10">→ 힙 맨 앞부터 청소 (_purge_expired_via_heap, mini_redis.py:131-141)</tspan></text>
+
+<text class="tb c-purple" x="24" y="162">저장소 (t = 1010.0)</text>
+<text class="tb c-purple" x="256" y="162">힙 (꺼내는 순서)</text>
+<text class="tb" x="452" y="162">판정: 시각이 지났나 → 저장소 값과 같은가</text>
+
+<!-- store -->
+<rect class="purple" x="24" y="176" width="208" height="108" rx="10"/>
+<text class="mono tb" x="40" y="206">a</text><text class="mono" x="60" y="206">expire_at = 1005.0</text>
+<text class="mono tb" x="40" y="238">b</text><text class="mono" x="60" y="238">expire_at = 1008.0</text>
+<text class="mono tb" x="40" y="270">c</text><text class="mono" x="60" y="270">expire_at = None</text>
+<text class="ts" x="24" y="308">b: EXPIRE 를 두 번 → 힙에 2개</text>
+<text class="ts" x="24" y="330">c: SET c new 가 TTL 을 지움</text>
+<text class="ts" x="24" y="352">(힙 항목은 그대로 남음)</text>
+
+<!-- heap items -->
+<rect class="purple" x="256" y="176" width="160" height="44" rx="8"/>
+<text class="ts" x="268" y="203">①</text><text class="mono" x="290" y="203">(1005.0, 'a')</text>
+<rect class="purple" x="256" y="236" width="160" height="44" rx="8"/>
+<text class="ts" x="268" y="263">②</text><text class="mono" x="290" y="263">(1006.0, 'c')</text>
+<rect class="purple" x="256" y="296" width="160" height="44" rx="8"/>
+<text class="ts" x="268" y="323">③</text><text class="mono" x="290" y="323">(1008.0, 'b')</text>
+<rect class="purple" x="256" y="356" width="160" height="44" rx="8"/>
+<text class="ts" x="268" y="383">④</text><text class="mono" x="290" y="383">(1100.0, 'b')</text>
+
+<line class="ln" x1="416" y1="198" x2="444" y2="198" marker-end="url(#arrow)"/>
+<line class="ln" x1="416" y1="258" x2="444" y2="258" marker-end="url(#arrow)"/>
+<line class="ln" x1="416" y1="318" x2="444" y2="318" marker-end="url(#arrow)"/>
+<line class="ln" x1="416" y1="378" x2="444" y2="378" marker-end="url(#arrow)"/>
+
+<!-- reasons -->
+<text class="ts" x="452" y="193">1005.0 ≤ 1010.0 → 꺼냄</text>
+<text class="ts" x="452" y="213">a 의 현재 expire_at 1005.0 과 같다</text>
+<text class="ts" x="452" y="253">1006.0 ≤ 1010.0 → 꺼냄</text>
+<text class="ts" x="452" y="273">c 의 expire_at 은 None — 다르다</text>
+<text class="ts" x="452" y="313">1008.0 ≤ 1010.0 → 꺼냄</text>
+<text class="ts" x="452" y="333">b 의 현재 expire_at 1008.0 과 같다</text>
+<text class="ts" x="452" y="373">1100.0 &gt; 1010.0 → 아직 미래</text>
+<text class="ts" x="452" y="393">꺼내지 않고 청소를 끝낸다</text>
+
+<line class="ln" x1="692" y1="198" x2="724" y2="198" marker-end="url(#arrow)"/>
+<line class="ln" x1="692" y1="258" x2="724" y2="258" marker-end="url(#arrow)"/>
+<line class="ln" x1="692" y1="318" x2="724" y2="318" marker-end="url(#arrow)"/>
+<line class="ln" x1="692" y1="378" x2="724" y2="378" marker-end="url(#arrow)"/>
+
+<!-- badges -->
+<rect class="red" x="728" y="172" width="128" height="52" rx="8"/>
+<text class="tb c-red" x="792" y="195" text-anchor="middle">삭제</text>
+<text class="mono" x="792" y="213" text-anchor="middle">_hard_delete</text>
+<rect class="box" x="728" y="232" width="128" height="52" rx="8"/>
+<text class="tb" x="792" y="255" text-anchor="middle">버림</text>
+<text class="ts" x="792" y="273" text-anchor="middle">낡은 항목</text>
+<rect class="red" x="728" y="292" width="128" height="52" rx="8"/>
+<text class="tb c-red" x="792" y="315" text-anchor="middle">삭제</text>
+<text class="mono" x="792" y="333" text-anchor="middle">_hard_delete</text>
+<rect class="green" x="728" y="352" width="128" height="52" rx="8"/>
+<text class="tb c-green" x="792" y="375" text-anchor="middle">멈춤</text>
+<text class="mono" x="792" y="393" text-anchor="middle">break</text>
+
+<!-- stale note -->
+<rect class="orange" x="256" y="416" width="600" height="36" rx="8"/>
+<text class="ts c-orange" x="272" y="439">④ 주의: b 는 ③ 에서 이미 지워져 이 항목도 낡았지만, 시각 1100 이 오거나 컴팩션이 돌 때까지 힙에 남는다</text>
+
+<!-- result -->
+<rect class="box" x="24" y="472" width="832" height="40" rx="10"/>
+<text class="tb" x="40" y="497">결과</text>
+<text class="mono" x="88" y="497">DBSIZE → (integer) 1</text>
+<text x="300" y="497"><tspan class="ts">남은 힙</tspan><tspan class="mono" dx="8">[(1100.0, 'b')]</tspan></text>
+<text x="560" y="497"><tspan class="ts">저장소에 남은 키</tspan><tspan class="mono" dx="8">c</tspan><tspan class="ts" dx="8">(TTL 없음)</tspan></text>
+</svg>

@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="516" viewBox="0 0 880 516" role="img" aria-labelledby="title desc">
+<title id="title">7번째 키가 들어오는 순간 — 8칸에서 16칸으로 이사</title>
+<desc id="desc">user:1부터 user:6까지 6개가 든 용량 8 해시맵에 user:7을 옛 5번 칸에 먼저 넣으면 키 7개가 8 × 0.75 = 6을 넘어 용량 16으로 늘어난다. 모든 키를 다시 해싱하면 user:3, user:4, user:5는 같은 번호에 남고 user:1, user:2, user:6은 번호에 8을 더한 칸으로 옮겨 가며, 새 키 user:7도 먼저 옛 5번 칸에 들어간 뒤 다른 키와 함께 다시 해싱되어 13번 칸으로 옮겨진다. 해시의 하위 4번째 비트가 0이면 제자리, 1이면 +8이다.</desc>
+<style>
+  text{font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR","Noto Sans CJK KR",sans-serif;font-size:15px;fill:#1D1F23}
+  .bg{fill:#FFFFFF}
+  .ts{font-size:13px;fill:#5B6069}
+  .th{font-size:17px;font-weight:700}
+  .tb{font-weight:700}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,"Noto Sans Mono CJK KR",monospace;font-size:13.5px}
+  .box{fill:#F4F3EF;stroke:#9A9CA3;stroke-width:1.5}
+  .zone{fill:#FAF9F6;stroke:#C9C6BE;stroke-width:1.2;stroke-dasharray:5 4}
+  .blue{fill:#E7EFF9;stroke:#1F5FAD;stroke-width:1.6}
+  .green{fill:#E6F4EC;stroke:#1B7F4B;stroke-width:1.6}
+  .orange{fill:#FCEFE0;stroke:#B25E09;stroke-width:1.6}
+  .red{fill:#FCEBEA;stroke:#B42318;stroke-width:1.6}
+  .purple{fill:#F1EAFB;stroke:#6E3FB0;stroke-width:1.6}
+  .yellow{fill:#FFF3C4;stroke:#A07800;stroke-width:1.6}
+  .c-blue{fill:#1F5FAD}.c-green{fill:#1B7F4B}.c-orange{fill:#B25E09}.c-red{fill:#B42318}.c-purple{fill:#6E3FB0}.c-muted{fill:#5B6069}
+  .ln{stroke:#6B7078;stroke-width:1.6;fill:none}
+  .ln-blue{stroke:#1F5FAD}.ln-green{stroke:#1B7F4B}.ln-red{stroke:#B42318}.ln-orange{stroke:#B25E09}.ln-purple{stroke:#6E3FB0}
+  .dash{stroke-dasharray:6 5}
+  .ah{fill:#6B7078}.ah-blue{fill:#1F5FAD}.ah-green{fill:#1B7F4B}.ah-red{fill:#B42318}.ah-orange{fill:#B25E09}.ah-purple{fill:#6E3FB0}
+  @media (prefers-color-scheme:dark){
+    text{fill:#E8E6E1}
+    .bg{fill:#1A1C20}
+    .ts{fill:#A9A69F}
+    .box{fill:#24262B;stroke:#6B6E76}
+    .zone{fill:#1F2125;stroke:#43464D}
+    .blue{fill:#1B2940;stroke:#7FB0F0}
+    .green{fill:#16281E;stroke:#5FC98E}
+    .orange{fill:#2E2215;stroke:#E8A05A}
+    .red{fill:#301A18;stroke:#F08A80}
+    .purple{fill:#251C33;stroke:#C3A0F0}
+    .yellow{fill:#2E2812;stroke:#E3C45C}
+    .c-blue{fill:#9CC4F5}.c-green{fill:#7ED3A3}.c-orange{fill:#EDB27A}.c-red{fill:#F4A39B}.c-purple{fill:#D2B8F4}.c-muted{fill:#A9A69F}
+    .ln{stroke:#8D9098}
+    .ln-blue{stroke:#7FB0F0}.ln-green{stroke:#5FC98E}.ln-red{stroke:#F08A80}.ln-orange{stroke:#E8A05A}.ln-purple{stroke:#C3A0F0}
+    .ah{fill:#8D9098}.ah-blue{fill:#7FB0F0}.ah-green{fill:#5FC98E}.ah-red{fill:#F08A80}.ah-orange{fill:#E8A05A}.ah-purple{fill:#C3A0F0}
+  }
+</style>
+<defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-blue" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-red" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-green" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-green" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-orange" d="M0,0 L10,5 L0,10 z"/></marker>
+  <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah-purple" d="M0,0 L10,5 L0,10 z"/></marker>
+</defs>
+<rect class="bg" x="0" y="0" width="880" height="516"/>
+<text class="th" x="24" y="34">7번째 키가 들어오는 순간 — 8칸에서 16칸으로 이사</text>
+<text class="ts" x="24" y="56">회색 화살표 = 제자리 · 주황 = 8칸 뒤로 이동 · 초록 = 새 키 · 같은 세로줄 = 번호 i 와 i+8</text>
+<rect class="zone" x="24" y="72" width="626" height="100" rx="10"/>
+<text x="40" y="94"><tspan class="tb">용량 8</tspan><tspan class="ts">  ·  user:7 을 먼저 넣은 직후 키 7개  ·  로드 7/8 = 0.875 &gt; 0.75</tspan></text>
+<rect class="zone" x="24" y="228" width="626" height="196" rx="10"/>
+<text x="40" y="408"><tspan class="tb">용량 16</tspan><tspan class="ts">  ·  키 7개  ·  로드 7/16 = 0.438</tspan></text>
+<line class="ln" x1="142.0" y1="159" x2="142.0" y2="240" marker-end="url(#arrow)"/>
+<path class="ln ln-orange" d="M220.0,159 L220.0,200 L259,200 L259,306 L220.0,306 L220.0,324" marker-end="url(#arrow-orange)"/>
+<path class="ln ln-orange" d="M298.0,159 L298.0,200 L337,200 L337,306 L298.0,306 L298.0,324" marker-end="url(#arrow-orange)"/>
+<line class="ln" x1="376.0" y1="159" x2="376.0" y2="240" marker-end="url(#arrow)"/>
+<path class="ln ln-orange" d="M532.0,159 L532.0,200 L571,200 L571,306 L532.0,306 L532.0,324" marker-end="url(#arrow-orange)"/>
+<line class="ln" x1="610.0" y1="159" x2="610.0" y2="240" marker-end="url(#arrow)"/>
+<path class="ln ln-green" d="M454.0,159 L454.0,200 L493,200 L493,306 L454.0,306 L454.0,324" marker-end="url(#arrow-green)"/>
+<rect class="purple" x="32" y="108" width="64" height="48" rx="6"/>
+<text class="ts" x="64.0" y="126" text-anchor="middle">[0]</text>
+<text class="ts" x="64.0" y="146" text-anchor="middle">·</text>
+<rect class="purple" x="110" y="108" width="64" height="48" rx="6"/>
+<text class="ts" x="142.0" y="126" text-anchor="middle">[1]</text>
+<text class="mono" x="142.0" y="146" text-anchor="middle">user:3</text>
+<rect class="purple" x="188" y="108" width="64" height="48" rx="6"/>
+<text class="ts" x="220.0" y="126" text-anchor="middle">[2]</text>
+<text class="mono" x="220.0" y="146" text-anchor="middle">user:6</text>
+<rect class="purple" x="266" y="108" width="64" height="48" rx="6"/>
+<text class="ts" x="298.0" y="126" text-anchor="middle">[3]</text>
+<text class="mono" x="298.0" y="146" text-anchor="middle">user:1</text>
+<rect class="purple" x="344" y="108" width="64" height="48" rx="6"/>
+<text class="ts" x="376.0" y="126" text-anchor="middle">[4]</text>
+<text class="mono" x="376.0" y="146" text-anchor="middle">user:4</text>
+<rect class="green" x="422" y="108" width="64" height="48" rx="6"/>
+<text class="ts" x="454.0" y="126" text-anchor="middle">[5]</text>
+<text class="mono c-green" x="454.0" y="146" text-anchor="middle">user:7</text>
+<rect class="purple" x="500" y="108" width="64" height="48" rx="6"/>
+<text class="ts" x="532.0" y="126" text-anchor="middle">[6]</text>
+<text class="mono" x="532.0" y="146" text-anchor="middle">user:2</text>
+<rect class="purple" x="578" y="108" width="64" height="48" rx="6"/>
+<text class="ts" x="610.0" y="126" text-anchor="middle">[7]</text>
+<text class="mono" x="610.0" y="146" text-anchor="middle">user:5</text>
+<rect class="purple" x="32" y="244" width="64" height="48" rx="6"/>
+<text class="ts" x="64.0" y="262" text-anchor="middle">[0]</text>
+<text class="ts" x="64.0" y="282" text-anchor="middle">·</text>
+<rect class="purple" x="110" y="244" width="64" height="48" rx="6"/>
+<text class="ts" x="142.0" y="262" text-anchor="middle">[1]</text>
+<text class="mono" x="142.0" y="282" text-anchor="middle">user:3</text>
+<rect class="purple" x="188" y="244" width="64" height="48" rx="6"/>
+<text class="ts" x="220.0" y="262" text-anchor="middle">[2]</text>
+<text class="ts" x="220.0" y="282" text-anchor="middle">·</text>
+<rect class="purple" x="266" y="244" width="64" height="48" rx="6"/>
+<text class="ts" x="298.0" y="262" text-anchor="middle">[3]</text>
+<text class="ts" x="298.0" y="282" text-anchor="middle">·</text>
+<rect class="purple" x="344" y="244" width="64" height="48" rx="6"/>
+<text class="ts" x="376.0" y="262" text-anchor="middle">[4]</text>
+<text class="mono" x="376.0" y="282" text-anchor="middle">user:4</text>
+<rect class="purple" x="422" y="244" width="64" height="48" rx="6"/>
+<text class="ts" x="454.0" y="262" text-anchor="middle">[5]</text>
+<text class="ts" x="454.0" y="282" text-anchor="middle">·</text>
+<rect class="purple" x="500" y="244" width="64" height="48" rx="6"/>
+<text class="ts" x="532.0" y="262" text-anchor="middle">[6]</text>
+<text class="ts" x="532.0" y="282" text-anchor="middle">·</text>
+<rect class="purple" x="578" y="244" width="64" height="48" rx="6"/>
+<text class="ts" x="610.0" y="262" text-anchor="middle">[7]</text>
+<text class="mono" x="610.0" y="282" text-anchor="middle">user:5</text>
+<rect class="purple" x="32" y="328" width="64" height="48" rx="6"/>
+<text class="ts" x="64.0" y="346" text-anchor="middle">[8]</text>
+<text class="ts" x="64.0" y="366" text-anchor="middle">·</text>
+<rect class="purple" x="110" y="328" width="64" height="48" rx="6"/>
+<text class="ts" x="142.0" y="346" text-anchor="middle">[9]</text>
+<text class="ts" x="142.0" y="366" text-anchor="middle">·</text>
+<rect class="orange" x="188" y="328" width="64" height="48" rx="6"/>
+<text class="ts" x="220.0" y="346" text-anchor="middle">[10]</text>
+<text class="mono c-orange" x="220.0" y="366" text-anchor="middle">user:6</text>
+<rect class="orange" x="266" y="328" width="64" height="48" rx="6"/>
+<text class="ts" x="298.0" y="346" text-anchor="middle">[11]</text>
+<text class="mono c-orange" x="298.0" y="366" text-anchor="middle">user:1</text>
+<rect class="purple" x="344" y="328" width="64" height="48" rx="6"/>
+<text class="ts" x="376.0" y="346" text-anchor="middle">[12]</text>
+<text class="ts" x="376.0" y="366" text-anchor="middle">·</text>
+<rect class="green" x="422" y="328" width="64" height="48" rx="6"/>
+<text class="ts" x="454.0" y="346" text-anchor="middle">[13]</text>
+<text class="mono c-green" x="454.0" y="366" text-anchor="middle">user:7</text>
+<rect class="orange" x="500" y="328" width="64" height="48" rx="6"/>
+<text class="ts" x="532.0" y="346" text-anchor="middle">[14]</text>
+<text class="mono c-orange" x="532.0" y="366" text-anchor="middle">user:2</text>
+<rect class="purple" x="578" y="328" width="64" height="48" rx="6"/>
+<text class="ts" x="610.0" y="346" text-anchor="middle">[15]</text>
+<text class="ts" x="610.0" y="366" text-anchor="middle">·</text>
+<rect class="orange" x="672" y="72" width="184" height="136" rx="10"/>
+<text class="tb c-orange" x="686" y="96">7번째 키가 들어옴</text>
+<text class="mono" x="686" y="120">put('user:7')</text>
+<text class="ts" x="686" y="144">① 옛 [5] 에 먼저 넣음</text>
+<text class="ts" x="686" y="168">② size 7 &gt; 8 × 0.75 = 6</text>
+<text x="686" y="192"><tspan class="ts">③ </tspan><tspan class="mono">_resize(16)</tspan></text>
+<text class="tb" x="672" y="246">해시의 하위 4비트</text>
+<text class="ts" x="672" y="266">맨 앞 비트 = 새로 보는 비트</text>
+<text x="672" y="294"><tspan class="mono">user:1 </tspan><tspan class="mono tb c-orange">1</tspan><tspan class="mono">011</tspan></text>
+<text x="672" y="314"><tspan class="mono">user:2 </tspan><tspan class="mono tb c-orange">1</tspan><tspan class="mono">110</tspan></text>
+<text x="672" y="334"><tspan class="mono">user:6 </tspan><tspan class="mono tb c-orange">1</tspan><tspan class="mono">010</tspan></text>
+<text class="ts c-orange" x="684" y="354">맨 앞 1 → +8 칸</text>
+<text x="672" y="384"><tspan class="mono">user:3 </tspan><tspan class="mono tb c-muted">0</tspan><tspan class="mono">001</tspan></text>
+<text x="672" y="404"><tspan class="mono">user:4 </tspan><tspan class="mono tb c-muted">0</tspan><tspan class="mono">100</tspan></text>
+<text x="672" y="424"><tspan class="mono">user:5 </tspan><tspan class="mono tb c-muted">0</tspan><tspan class="mono">111</tspan></text>
+<text class="ts" x="684" y="444">맨 앞 0 → 제자리</text>
+<text x="672" y="474"><tspan class="mono">user:7 </tspan><tspan class="mono tb c-green">1</tspan><tspan class="mono">101</tspan></text>
+<text class="ts c-green" x="684" y="494">1101 = 13번 칸</text>
+<text x="24" y="452"><tspan class="ts">재배치 때 키마다 </tspan><tspan class="mono">_hash</tspan><tspan class="ts"> 를 다시 계산 (</tspan><tspan class="mono">hashmap.py:210</tspan><tspan class="ts">)</tspan></text>
+<text class="ts" x="24" y="478">용량이 2의 거듭제곱이라 % 16 은 하위 4비트만 보는 것 → 각 키는 제자리(i) 아니면 i+8 로만 간다</text>
+</svg>
